@@ -8,17 +8,40 @@ import {
   Param,
   UseGuards,
   Request,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { QuizService } from './quiz.service';
+import { QuizImportService } from './quiz-import.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
+import { ImportPreviewDto } from './dto/import-preview.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+const XLSX_MAX_BYTES = 2 * 1024 * 1024; // 2 MB hard cap on the upload before parsing
+const XLSX_MIME_TYPES = new Set([
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'application/octet-stream', // some browsers mislabel .xlsx this way
+]);
 
 @ApiTags('quizzes')
 @Controller('quizzes')
 export class QuizController {
-  constructor(private quizService: QuizService) {}
+  constructor(
+    private quizService: QuizService,
+    private quizImportService: QuizImportService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -26,6 +49,46 @@ export class QuizController {
   @ApiOperation({ summary: 'Create a new quiz' })
   async create(@Request() req: any, @Body() dto: CreateQuizDto) {
     return this.quizService.create(req.user.sub, dto);
+  }
+
+  @Post('import/preview')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        title: { type: 'string' },
+        description: { type: 'string' },
+        isPublic: { type: 'boolean' },
+      },
+      required: ['file', 'title'],
+    },
+  })
+  @ApiOperation({
+    summary: 'Parse an uploaded .xlsx into a CreateQuizDto preview (no DB write)',
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: XLSX_MAX_BYTES, files: 1 },
+    }),
+  )
+  async importPreview(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() meta: ImportPreviewDto,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Fichier Excel manquant');
+    }
+    if (!/\.xlsx$/i.test(file.originalname || '')) {
+      throw new BadRequestException('Format attendu : .xlsx');
+    }
+    if (file.mimetype && !XLSX_MIME_TYPES.has(file.mimetype)) {
+      throw new BadRequestException('Type MIME invalide (attendu : .xlsx)');
+    }
+    return this.quizImportService.preview(file, meta);
   }
 
   // Lists the caller's quizzes only. Any `authorId` query parameter is ignored on purpose (IDOR fix).

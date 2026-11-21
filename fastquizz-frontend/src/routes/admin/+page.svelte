@@ -153,6 +153,12 @@
         </div>
 
         <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <a href="/admin/import" class="btn-secondary px-3 sm:px-5 text-sm" aria-label="Importer depuis Excel">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12" />
+            </svg>
+            <span class="hidden sm:inline">Importer Excel</span>
+          </a>
           <button on:click={handleCreateQuiz} class="btn-primary px-3 sm:px-5" aria-label="Nouveau quiz">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />

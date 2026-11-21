@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { QuizService } from './quiz.service';
+import { QuizImportService } from './quiz-import.service';
 import { QuizController } from './quiz.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
@@ -7,7 +8,7 @@ import { AuthModule } from '../auth/auth.module';
 @Module({
   imports: [PrismaModule, AuthModule],
   controllers: [QuizController],
-  providers: [QuizService],
+  providers: [QuizService, QuizImportService],
   exports: [QuizService],
 })
 export class QuizModule {}

@@ -104,6 +104,34 @@ export const api = {
 
     getByShareToken: (token: string) =>
       fetchJson<any>(`/quizzes/shared/${token}`),
+
+    // Multipart upload: we must NOT set Content-Type, so the browser adds the boundary itself.
+    importPreview: async (
+      file: File,
+      meta: { title: string; description?: string; isPublic?: boolean },
+    ): Promise<{
+      dto: any | null;
+      errors: Array<{ row: number; field?: string; message: string }>;
+      questionCount: number;
+    }> => {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('title', meta.title);
+      if (meta.description) form.append('description', meta.description);
+      if (meta.isPublic) form.append('isPublic', 'true');
+
+      const url = new URL(`${getApiBase()}/quizzes/import/preview`, window.location.origin);
+      const headers: Record<string, string> = {};
+      const token = localStorage.getItem('auth_token');
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const response = await fetch(url.toString(), { method: 'POST', headers, body: form });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: 'Erreur d\'import' }));
+        throw new Error(err.message || `HTTP ${response.status}`);
+      }
+      return response.json();
+    },
   },
 
   // Players

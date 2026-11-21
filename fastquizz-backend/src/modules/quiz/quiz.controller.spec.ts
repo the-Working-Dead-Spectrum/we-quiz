@@ -1,6 +1,7 @@
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { QuizController } from './quiz.controller';
 import { QuizService } from './quiz.service';
+import { QuizImportService } from './quiz-import.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 describe('QuizController', () => {
@@ -8,7 +9,11 @@ describe('QuizController', () => {
     findAll: jest.fn(),
     findOne: jest.fn(),
   };
-  const controller = new QuizController(quizService as unknown as QuizService);
+  const quizImportService = { preview: jest.fn() };
+  const controller = new QuizController(
+    quizService as unknown as QuizService,
+    quizImportService as unknown as QuizImportService,
+  );
 
   beforeEach(() => jest.clearAllMocks());
 
