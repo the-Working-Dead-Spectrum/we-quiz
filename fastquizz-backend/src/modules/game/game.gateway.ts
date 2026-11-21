@@ -51,6 +51,7 @@ import {
   HostStartGameDto,
   HostNextStepDto,
   PlayerJoinDto,
+  PlayerLeaveDto,
   PlayerReconnectDto,
   PlayerSubmitAnswerDto,
   GamePodiumPayload,
@@ -58,6 +59,7 @@ import {
   HostGameCreatedPayload,
   LeaderboardEntry,
   LobbyPlayerJoinedPayload,
+  LobbyPlayerLeftPayload,
   LobbyTimerPayload,
   PlayerAnswerAcceptedPayload,
   PlayerFeedbackPayload,
@@ -375,6 +377,57 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       questionIndex: dto.questionIndex,
     });
     await this.broadcastAnswerCount(dto.pin, dto.questionIndex);
+  }
+
+  @SubscribeMessage(ClientEvents.PLAYER_LEAVE)
+  async handlePlayerLeave(
+    @ConnectedSocket() client: GameSocket,
+    @MessageBody() dto: PlayerLeaveDto,
+  ): Promise<void> {
+    // Same auth check as submit_answer: the socket must be bound to this player.
+    const playerId = client.playerId;
+    if (
+      !playerId ||
+      client.isHost ||
+      !client.playerToken ||
+      client.pin !== dto.pin ||
+      !safeEqual(client.playerToken, dto.playerToken)
+    ) {
+      throw new GameError('UNAUTHORIZED', 'This connection is not bound to this player');
+    }
+
+    // Load the player profile FIRST: once removed, we no longer know the nickname to broadcast
+    // or the nicknameKey needed to clean the reverse-lookup map.
+    const player = await this.redis.getPlayer(dto.pin, playerId);
+    if (!player) {
+      // Already gone (race with a prior leave). Nothing to do but detach the socket.
+      this.releaseSocket(client);
+      return;
+    }
+
+    const key = nicknameKey(player.nickname);
+    await this.redis.removePlayer(dto.pin, playerId, key);
+    // Invalidate the token so player:reconnect cannot resurrect this player.
+    await this.redis.deletePlayerToken(dto.playerToken);
+
+    const remaining = await this.redis.getAllPlayers(dto.pin);
+    this.broadcast<LobbyPlayerLeftPayload>(dto.pin, ServerEvents.LOBBY_PLAYER_LEFT, {
+      playerId,
+      nickname: player.nickname,
+      playerCount: remaining.length,
+    });
+    // Keep hosts and other players in sync with the new roster (lobby count, leaderboard).
+    const state = await this.redis.getGameState(dto.pin);
+    if (state) {
+      this.broadcast<GameStateChangedPayload>(
+        dto.pin,
+        ServerEvents.GAME_STATE_CHANGED,
+        await this.buildStateChanged(dto.pin, state, remaining),
+      );
+    }
+
+    this.releaseSocket(client);
+    this.logger.log(`Player ${playerId} left game ${dto.pin}`);
   }
 
   // ========== GAME ENGINE ==========

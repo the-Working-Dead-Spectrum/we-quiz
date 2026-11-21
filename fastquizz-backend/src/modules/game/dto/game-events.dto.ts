@@ -86,6 +86,19 @@ export class PlayerReconnectDto {
   playerToken: string;
 }
 
+export class PlayerLeaveDto {
+  @ApiProperty({ description: 'Game PIN (6-8 alphanumeric chars)' })
+  @Transform(normalizePin)
+  @IsString()
+  @Matches(PIN_PATTERN, { message: 'pin must be 6 to 8 alphanumeric characters' })
+  pin: string;
+
+  @ApiProperty({ description: 'Player token (uuid v4)' })
+  @Transform(rawValue)
+  @IsUUID('4', { message: 'playerToken must be a valid token' })
+  playerToken: string;
+}
+
 export class PlayerSubmitAnswerDto {
   @ApiProperty({ description: 'Game PIN (6-8 alphanumeric chars)' })
   @Transform(normalizePin)
@@ -159,6 +172,12 @@ export interface GameStateChangedPayload {
 }
 
 export interface LobbyPlayerJoinedPayload {
+  playerId: string;
+  nickname: string;
+  playerCount: number;
+}
+
+export interface LobbyPlayerLeftPayload {
   playerId: string;
   nickname: string;
   playerCount: number;
@@ -242,12 +261,14 @@ export const ClientEvents = {
   PLAYER_JOIN: 'player:join',
   PLAYER_RECONNECT: 'player:reconnect',
   PLAYER_SUBMIT_ANSWER: 'player:submit_answer',
+  PLAYER_LEAVE: 'player:leave',
 } as const;
 
 export const ServerEvents = {
   HOST_GAME_CREATED: 'host:game_created',
   GAME_STATE_CHANGED: 'game:state_changed',
   LOBBY_PLAYER_JOINED: 'lobby:player_joined',
+  LOBBY_PLAYER_LEFT: 'lobby:player_left',
   LOBBY_TIMER: 'lobby:timer',
   PLAYER_JOINED: 'player:joined',
   PLAYER_STATE_SYNC: 'player:state_sync',

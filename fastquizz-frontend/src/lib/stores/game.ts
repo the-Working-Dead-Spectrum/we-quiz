@@ -346,6 +346,13 @@ function createHostGameStore() {
       });
     });
 
+    manager.on('lobby:player_left', (data) => {
+      update((s) => {
+        const players = s.players.filter((p) => p.id !== data.playerId);
+        return players.length === s.players.length ? s : { ...s, players };
+      });
+    });
+
     manager.on('lobby:timer', (data) => {
       update((s) => ({ ...s, lobbyTimerRemaining: data.remaining }));
     });
@@ -677,6 +684,14 @@ function createPlayerGameStore() {
       });
     });
 
+    // Someone else quit: drop them from the local roster. Our own leave is handled by `leave()`.
+    manager.on('lobby:player_left', (data) => {
+      update((s) => {
+        const players = s.players.filter((p) => p.id !== data.playerId);
+        return players.length === s.players.length ? s : { ...s, players };
+      });
+    });
+
     manager.on('game:state_changed', (data) => {
       if (data.status !== 'QUESTION_ACTIVE') clock.stop();
       update((s) => {
@@ -859,8 +874,17 @@ function createPlayerGameStore() {
       update((s) => ({ ...s, isConnected: false, isReconnecting: false }));
     },
 
-    /** Leaves the game for good: closes the socket and forgets the stored session. */
+    /**
+     * Leaves the game for good: tells the server to remove us, closes the socket and forgets the
+     * stored session. The server broadcasts `lobby:player_left` so the host sees the new count.
+     * If the socket is already closed (fatal error, kick) we skip the network step and still clean up.
+     */
     leave(): void {
+      const s = get(store);
+      if (ws && s.pin && s.playerToken) {
+        // Fire-and-forget: we don't wait for the broadcast, we just want the Redis cleanup to start.
+        ws.send('player:leave', { pin: s.pin, playerToken: s.playerToken });
+      }
       teardown();
       transientError.clear();
       pendingJoin = null;

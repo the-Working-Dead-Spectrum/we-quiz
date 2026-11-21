@@ -95,7 +95,18 @@
     }
   }
 
-  function handleLeave() {
+  let showLeaveConfirm = false;
+
+  function askLeave() {
+    showLeaveConfirm = true;
+  }
+
+  function cancelLeave() {
+    showLeaveConfirm = false;
+  }
+
+  function confirmLeave() {
+    showLeaveConfirm = false;
     playerGameStore.leave();
     goto('/');
   }
@@ -156,6 +167,20 @@
             role="img"
             aria-label={$playerIsConnected ? 'Connecté' : 'Déconnecté'}
           />
+
+          {#if !$showPodium}
+            <button
+              type="button"
+              on:click={askLeave}
+              class="p-1.5 rounded-full text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              aria-label="Quitter la partie"
+              title="Quitter la partie"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          {/if}
         </div>
       </div>
     </div>
@@ -460,7 +485,7 @@
 
             <!-- Return Button -->
             <div class="text-center mt-6 animate-fade-in">
-              <button on:click={handleLeave} class="btn-primary w-full sm:w-auto px-8">
+              <button on:click={confirmLeave} class="btn-primary w-full sm:w-auto px-8">
                 Revenir à l'accueil
               </button>
             </div>
@@ -469,4 +494,30 @@
       {/if}
     </div>
   </main>
+
+  {#if showLeaveConfirm}
+    <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fade-in">
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div class="absolute inset-0 bg-gray-950/70" role="presentation" on:click={cancelLeave}></div>
+      <div
+        class="relative bg-gray-900 border border-gray-800 rounded-t-3xl sm:rounded-2xl shadow-xl max-w-sm w-full p-5 sm:p-6 animate-slide-up"
+        style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom));"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="leave-confirm-title"
+      >
+        <h3 id="leave-confirm-title" class="font-display font-semibold text-lg text-white mb-2">Quitter la partie ?</h3>
+        <p class="text-sm text-gray-400 mb-5">
+          Tu perdras ta progression et ton score. Tu ne pourras pas revenir avec le même pseudo pendant cette partie.
+        </p>
+        <div class="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+          <button type="button" class="btn-ghost sm:w-auto" on:click={cancelLeave}>Rester</button>
+          <button type="button" class="btn-primary sm:w-auto bg-red-600 hover:bg-red-500 focus-visible:ring-red-400" on:click={confirmLeave}>
+            Quitter
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>

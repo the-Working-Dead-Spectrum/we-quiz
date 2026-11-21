@@ -127,6 +127,11 @@ export interface PlayerSubmitAnswerPayload {
   playerToken: string;
 }
 
+export interface PlayerLeavePayload {
+  pin: string;
+  playerToken: string;
+}
+
 export interface ClientEventMap {
   'host:create_game': HostCreateGamePayload;
   'host:join_game': HostJoinGamePayload;
@@ -135,6 +140,7 @@ export interface ClientEventMap {
   'player:join': PlayerJoinPayload;
   'player:reconnect': PlayerReconnectPayload;
   'player:submit_answer': PlayerSubmitAnswerPayload;
+  'player:leave': PlayerLeavePayload;
 }
 
 export type ClientEventName = keyof ClientEventMap;
@@ -160,6 +166,12 @@ export interface GameStateChangedEvent {
 }
 
 export interface LobbyPlayerJoinedEvent {
+  playerId: string;
+  nickname: string;
+  playerCount: number;
+}
+
+export interface LobbyPlayerLeftEvent {
   playerId: string;
   nickname: string;
   playerCount: number;
@@ -265,6 +277,7 @@ export interface ServerEventMap {
   'host:game_created': HostGameCreatedEvent;
   'game:state_changed': GameStateChangedEvent;
   'lobby:player_joined': LobbyPlayerJoinedEvent;
+  'lobby:player_left': LobbyPlayerLeftEvent;
   'lobby:timer': LobbyTimerEvent;
   'player:joined': PlayerJoinedEvent;
   'player:state_sync': PlayerStateSyncEvent;
