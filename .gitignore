@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Environment files (secrets) - keep only *.example
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+.svelte-kit/
+.vercel/
+.output/
+
+# Test artifacts
+coverage/
+test-results/
+playwright-report/
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE / OS
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

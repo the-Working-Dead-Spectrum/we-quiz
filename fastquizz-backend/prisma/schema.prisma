@@ -1,0 +1,171 @@
+// Prisma Schema for fastquizz Backend
+// Database: PostgreSQL
+// ORM: Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  quizzes         Quiz[]
+  hostedSessions  GameSession[] @relation("HostedSessions")
+  hostedRooms     Room[]        @relation("HostedRooms")
+  playerResults   PlayerResult[]
+  roomParticipants RoomParticipant[] @relation("RoomParticipants")
+}
+
+model Quiz {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  authorId    String
+  isPublic    Boolean  @default(false)
+  shareToken  String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author     User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  questions  Question[]
+  sessions   GameSession[]
+  rooms      Room[]
+
+  @@index([authorId])
+  @@index([isPublic])
+  @@index([shareToken])
+}
+
+model Question {
+  id              String   @id @default(uuid())
+  quizId          String
+  text            String
+  imageUrl        String?
+  timeLimit       Int      @default(20) // seconds
+  pointsMultiplier Float   @default(1.0)
+  orderIndex      Int
+
+  quiz    Quiz    @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options Option[]
+
+  @@index([quizId])
+  @@index([quizId, orderIndex])
+}
+
+model Option {
+  id          String   @id @default(uuid())
+  questionId  String
+  text        String
+  isCorrect   Boolean  @default(false)
+  colorIndex  Int      // 0: Red/Triangle, 1: Blue/Diamond, 2: Yellow/Circle, 3: Green/Square
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model PlayerResult {
+  id                String   @id @default(uuid())
+  sessionId         String
+  userId            String?
+  nickname          String
+  finalScore        Int      @default(0)
+  rank              Int      @default(0)
+  correctAnswersCount Int    @default(0)
+  createdAt         DateTime @default(now())
+
+  session GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId])
+  @@index([sessionId, finalScore])
+}
+
+model GameSession {
+  id        String   @id @default(uuid())
+  quizId    String
+  hostId    String?  // null for anonymous hosts (WS host:create_game), see ADR 0001
+  pin       String   @unique @db.VarChar(8) // ^[A-Z0-9]{6,8}$ (ADR 0001 section 2)
+  roomId    String?  @unique
+  status    GameStatus @default(LOBBY)
+  startedAt DateTime?
+  endedAt   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quiz      Quiz           @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  host      User?          @relation("HostedSessions", fields: [hostId], references: [id], onDelete: Cascade)
+  results   PlayerResult[]
+  room      Room?          @relation("RoomGameSession", fields: [roomId], references: [id])
+
+  @@index([pin])
+  @@index([hostId])
+  @@index([status])
+  @@index([roomId])
+}
+
+model Room {
+  id        String   @id @default(uuid())
+  code      String   @unique @db.VarChar(8) // 6-8 char unique code, equals GameSession.pin
+  quizId    String
+  hostId    String
+  status    RoomStatus @default(LOBBY)
+  maxPlayers Int     @default(500)
+  startedAt DateTime?
+  endedAt   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quiz       Quiz           @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  host       User           @relation("HostedRooms", fields: [hostId], references: [id], onDelete: Cascade)
+  participants RoomParticipant[]
+  gameSession GameSession?   @relation("RoomGameSession")
+
+  @@index([code])
+  @@index([hostId])
+  @@index([status])
+}
+
+model RoomParticipant {
+  id              String   @id @default(uuid())
+  roomId          String
+  userId          String?
+  nickname        String
+  score           Int      @default(0)
+  correctAnswersCount Int  @default(0)
+  joinedAt        DateTime @default(now())
+  leftAt          DateTime?
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User?  @relation("RoomParticipants", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([roomId, nickname]) // One nickname per room
+  @@index([roomId])
+  @@index([userId])
+}
+
+enum RoomStatus {
+  LOBBY
+  IN_PROGRESS
+  ENDED
+  EXPIRED
+  ABANDONED
+}
+
+enum GameStatus {
+  LOBBY
+  QUESTION_ACTIVE
+  QUESTION_RESULT
+  PODIUM
+  ENDED
+}

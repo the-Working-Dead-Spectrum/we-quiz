@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@nestjs/platform-express": "^12.5.1",
+    "@nestjs/websockets": "^12.5.1"
+  }
+}
