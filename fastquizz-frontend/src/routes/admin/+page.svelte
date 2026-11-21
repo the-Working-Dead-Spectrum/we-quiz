@@ -304,12 +304,9 @@
           </svg>
           <h2 class="font-display font-bold text-2xl text-gray-900 mb-2">Connexion requise</h2>
           <p class="text-gray-500 mb-6">Connectez-vous pour accéder à votre tableau de bord et gérer vos quiz.</p>
-          <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <div class="flex justify-center">
             <a href="/auth/login" class="btn-primary w-full sm:w-auto">
               Se connecter
-            </a>
-            <a href="/auth/register" class="btn-secondary w-full sm:w-auto">
-              S'inscrire
             </a>
           </div>
         </div>

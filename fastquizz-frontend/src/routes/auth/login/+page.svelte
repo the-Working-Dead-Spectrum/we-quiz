@@ -89,11 +89,7 @@
         </button>
       </form>
 
-      <p class="text-center text-gray-500 text-sm mt-6">
-        Pas encore de compte ? <a href="/auth/register" class="text-primary-500 hover:underline font-medium">S'inscrire</a>
-      </p>
-
-      <p class="text-center text-gray-400 text-sm mt-4">
+      <p class="text-center text-gray-400 text-sm mt-6">
         <a href="/" class="hover:text-gray-600 transition-colors">← Retour à l'accueil</a>
       </p>
     </div>
