@@ -1,6 +1,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { authStore } from '$lib/stores';
+  import { APP_NAME, pageTitle } from '$lib/brand';
+  import BrandLogo from '$lib/components/BrandLogo.svelte';
 
   let name = '';
   let email = '';
@@ -12,7 +14,7 @@
   async function handleRegister(event: Event) {
     event.preventDefault();
 
-    if (!name || !email || !password) return;
+    if (!name || !email || !password || isLoading) return;
 
     if (password !== confirmPassword) {
       error = 'Les mots de passe ne correspondent pas';
@@ -38,45 +40,35 @@
     isLoading = false;
   }
 
-  function handleKeyDown(event: KeyboardEvent) {
-    if (event.key === 'Enter') {
-      handleRegister(event as unknown as Event);
-    }
-  }
+  // Enter submits the form natively: no extra keydown handler (it caused a double submit).
 </script>
 
 <svelte:head>
-  <title>Inscription - fastquizz</title>
+  <title>{pageTitle('Inscription')}</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-b from-gray-50 to-white" on:keydown={handleKeyDown}>
-  <main class="min-h-screen flex items-center justify-center px-4 py-12">
+<div class="min-h-dvh bg-gradient-to-b from-primary-50/60 to-white">
+  <main class="min-h-dvh flex items-center justify-center px-4 py-10" style="padding-top: max(2.5rem, env(safe-area-inset-top)); padding-bottom: max(2.5rem, env(safe-area-inset-bottom));">
     <div class="w-full max-w-md animate-fade-in">
       <!-- Logo -->
-      <div class="text-center mb-10">
-        <a href="/" class="inline-flex items-center gap-2 mb-6">
-          <div class="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <span class="font-display font-bold text-xl text-gray-900">fastquizz</span>
-        </a>
-        <h1 class="font-display font-bold text-2xl text-gray-900 mb-2">Créer un compte</h1>
-        <p class="text-gray-500">Rejoignez fastquizz et créez vos premiers quiz</p>
+      <div class="text-center mb-8 sm:mb-10">
+        <BrandLogo size="lg" class="mb-6" />
+        <h1 class="font-display font-bold text-2xl text-gray-950 mb-2">Créer un compte</h1>
+        <p class="text-gray-500">Rejoignez {APP_NAME} et créez vos premiers quiz</p>
       </div>
 
       {#if error}
-        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm animate-slide-down">
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm animate-slide-down" role="alert">
           {error}
         </div>
       {/if}
 
       <form on:submit={handleRegister} class="space-y-6">
-        <div class="card p-6 space-y-6">
+        <div class="card p-5 sm:p-6 space-y-5 sm:space-y-6">
           <div>
-            <label class="label">Nom complet</label>
+            <label class="label" for="register-name">Nom complet</label>
             <input
+              id="register-name"
               bind:value={name}
               type="text"
               placeholder="Votre nom"
@@ -87,8 +79,9 @@
           </div>
 
           <div>
-            <label class="label">Email</label>
+            <label class="label" for="register-email">Email</label>
             <input
+              id="register-email"
               bind:value={email}
               type="email"
               placeholder="votre@email.com"
@@ -99,8 +92,9 @@
           </div>
 
           <div>
-            <label class="label">Mot de passe</label>
+            <label class="label" for="register-password">Mot de passe</label>
             <input
+              id="register-password"
               bind:value={password}
               type="password"
               placeholder="••••••••"
@@ -113,8 +107,9 @@
           </div>
 
           <div>
-            <label class="label">Confirmer le mot de passe</label>
+            <label class="label" for="register-confirm">Confirmer le mot de passe</label>
             <input
+              id="register-confirm"
               bind:value={confirmPassword}
               type="password"
               placeholder="••••••••"
@@ -127,10 +122,10 @@
 
         <button
           type="submit"
-          class="btn-primary w-full py-3 {isLoading ? 'opacity-50 cursor-not-allowed' : ''}"
+          class="btn-primary w-full py-3"
           disabled={isLoading}
         >
-          {isLoading ? 'Inscription...' : "S'inscrire"}
+          {isLoading ? 'Inscription…' : "S'inscrire"}
         </button>
       </form>
 

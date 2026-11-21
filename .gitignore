@@ -12,6 +12,12 @@ node_modules/
 # Logs
 *.log
 
+# Local tooling output (Playwright MCP snapshots may contain typed form values)
+.playwright-mcp/
+
+# Local-only preview routes
+fastquizz-frontend/src/routes/zz-preview/
+
 # IDE / OS
 .idea/
 *.swp

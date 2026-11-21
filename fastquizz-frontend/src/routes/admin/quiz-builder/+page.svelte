@@ -6,6 +6,8 @@
   import { authStore } from '$lib/stores/auth';
   import { api } from '$lib/utils/api';
   import QuestionEditor from '$lib/components/QuestionEditor.svelte';
+  import BrandLogo from '$lib/components/BrandLogo.svelte';
+  import { pageTitle } from '$lib/brand';
 
   let questionTextArea: HTMLTextAreaElement;
 
@@ -42,15 +44,16 @@
       });
   }
 
+  // A button (not a link): declining the confirmation must keep the user in the editor.
   function handleCancel() {
     if (get(quizBuilderStore).isDirty) {
       if (confirm('Vous avez des modifications non sauvegardées. Voulez-vous vraiment quitter ?')) {
         quizBuilderStore.clearDraft();
         quizBuilderStore.reset();
-        goto('/');
+        goto('/admin');
       }
     } else {
-      goto('/');
+      goto('/admin');
     }
   }
 
@@ -63,36 +66,31 @@
 </script>
 
 <svelte:head>
-  <title>Créer un quiz - fastquizz</title>
+  <title>{pageTitle('Créer un quiz')}</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50" on:keydown={handleKeyDown}>
+<svelte:window on:keydown={handleKeyDown} />
+
+<div class="min-h-dvh bg-gray-50">
   <!-- Top Bar -->
-  <header class="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <div class="flex items-center gap-4">
-          <a href="/" class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-xl bg-primary-500 flex items-center justify-center">
-              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <span class="font-display font-bold text-xl text-gray-900">fastquizz</span>
-          </a>
-          <span class="hidden sm:block text-gray-400">/</span>
-          <h1 class="font-display font-semibold text-lg text-gray-900">Créer un quiz</h1>
+  <header class="fixed top-0 inset-x-0 z-40 bg-white/90 backdrop-blur border-b border-gray-100 pt-safe">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between gap-2 h-16">
+        <div class="flex items-center gap-3 min-w-0">
+          <BrandLogo size="md" href="/admin" />
+          <span class="hidden md:block text-gray-300">/</span>
+          <h1 class="hidden md:block font-display font-semibold text-lg text-gray-900 truncate">Créer un quiz</h1>
         </div>
 
-        <div class="flex items-center gap-3">
-          <a href="/" class="btn-ghost text-sm" on:click={handleCancel}>Annuler</a>
-          <button class="btn-primary" on:click={handleSave} disabled={$quizBuilderStore.isSaving}>
-            {$quizBuilderStore.isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
-            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-4 0l-4 4m0 0l4 4m-4-4h18" />
+        <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <button type="button" class="btn-ghost text-sm px-2.5 sm:px-4" on:click={handleCancel}>Annuler</button>
+          <button class="btn-primary px-3 sm:px-5" on:click={handleSave} disabled={$quizBuilderStore.isSaving}>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
+            {$quizBuilderStore.isSaving ? 'Sauvegarde…' : 'Sauvegarder'}
           </button>
-          <button on:click={handleLogout} class="btn-ghost text-sm">
+          <button on:click={handleLogout} class="hidden sm:inline-flex btn-ghost text-sm">
             Déconnexion
           </button>
         </div>
@@ -102,13 +100,13 @@
 
   <!-- Error Toast -->
   {#if $quizBuilderStore.error}
-    <div class="fixed top-20 right-4 z-50 animate-slide-down bg-red-50 border border-red-200 rounded-xl p-4 max-w-md shadow-lg">
+    <div class="fixed left-3 right-3 sm:left-auto sm:right-4 z-50 animate-slide-down bg-red-50 border border-red-200 rounded-xl p-4 sm:max-w-md shadow-lg" style="top: calc(5rem + env(safe-area-inset-top));" role="alert">
       <div class="flex items-start gap-3">
         <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
         </svg>
         <p class="text-red-700 text-sm flex-1">{$quizBuilderStore.error}</p>
-        <button on:click={() => quizBuilderStore.setError(null)} class="text-red-500 hover:text-red-700">
+        <button on:click={() => quizBuilderStore.setError(null)} class="text-red-500 hover:text-red-700" aria-label="Fermer">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -119,7 +117,7 @@
 
   <!-- Success Toast -->
   {#if $quizBuilderStore.success}
-    <div class="fixed top-20 right-4 z-50 animate-slide-down bg-green-50 border border-green-200 rounded-xl p-4 max-w-md shadow-lg">
+    <div class="fixed left-3 right-3 sm:left-auto sm:right-4 z-50 animate-slide-down bg-green-50 border border-green-200 rounded-xl p-4 sm:max-w-md shadow-lg" style="top: calc(5rem + env(safe-area-inset-top));" role="status">
       <div class="flex items-center gap-3">
         <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
@@ -130,19 +128,19 @@
   {/if}
 
   <!-- Main Content -->
-  <main class="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
+  <main class="px-3 sm:px-6 lg:px-8" style="padding-top: calc(5.5rem + env(safe-area-inset-top)); padding-bottom: calc(3rem + env(safe-area-inset-bottom));">
     <div class="max-w-4xl mx-auto">
       <!-- Quiz Title & Description -->
-      <div class="card mb-6 animate-fade-in">
-        <div class="p-6">
-          <div class="mb-6">
+      <div class="card mb-4 sm:mb-6 animate-fade-in">
+        <div class="p-4 sm:p-6">
+          <div class="mb-5 sm:mb-6">
             <label for="quiz-title" class="label">Titre du quiz *</label>
             <input
               id="quiz-title"
               bind:value={$quizBuilderStore.title}
               on:input={() => quizBuilderStore.setTitle($quizBuilderStore.title)}
               placeholder="Ex: Quiz Culture Générale"
-              class="input text-2xl font-semibold"
+              class="input text-lg sm:text-2xl font-semibold"
               maxlength="100"
               bind:this={questionTextArea}
             />
@@ -277,7 +275,7 @@
   </main>
 
   <!-- Keyboard shortcut hint -->
-  <div class="fixed bottom-4 right-4 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg opacity-70 hidden sm:block">
+  <div class="fixed bottom-4 right-4 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg opacity-70 hidden lg:block">
     <kbd class="px-1.5 py-0.5 bg-gray-700 rounded">⌘/Ctrl</kbd> + <kbd class="px-1.5 py-0.5 bg-gray-700 rounded">S</kbd> pour sauvegarder
   </div>
 </div>

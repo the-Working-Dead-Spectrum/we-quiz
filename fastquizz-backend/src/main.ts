@@ -33,7 +33,7 @@ async function bootstrap() {
 
   // Swagger documentation
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('fastquizz API')
+    .setTitle('weQuiz API')
     .setDescription('Real-time quiz platform API')
     .setVersion('1.0')
     .addBearerAuth()

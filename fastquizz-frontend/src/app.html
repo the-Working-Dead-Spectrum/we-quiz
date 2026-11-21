@@ -2,11 +2,38 @@
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#ed8915" />
+    <!-- viewport-fit=cover: content can use the notch area; safe areas are padded in CSS. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- <title> is set per page (svelte:head); a static one here would take precedence. -->
+    <meta name="description" content="weQuiz : quiz interactifs en temps réel. Créez, lancez et jouez depuis n'importe quel écran." />
+    <meta name="application-name" content="weQuiz" />
+    <meta name="theme-color" content="#2c83c0" />
+    <meta name="color-scheme" content="light" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
+    <link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="%sveltekit.assets%/favicon-32.png" sizes="32x32" type="image/png" />
+
+    <!-- iOS / iPadOS home screen -->
+    <link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="weQuiz" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <script>
+      // Capture the Android/Chromium install prompt before the app mounts (it can fire early);
+      // $lib/pwa picks it up from window.__wqInstallEvent.
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__wqInstallEvent = e;
+      });
+    </script>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover" class="min-h-screen bg-gray-50">

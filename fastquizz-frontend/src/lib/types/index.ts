@@ -308,12 +308,13 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// Color mapping for Kahoot-style buttons
+// Answer color/shape mapping. Class names are spelled out in full so Tailwind keeps them.
+// `text` is the readable text color on `bg` (dark text on yellow).
 export const COLOR_CONFIG = [
-  { index: 0, name: 'red', bg: 'bg-kahoot-red', shape: 'triangle', label: 'Triangle' },
-  { index: 1, name: 'blue', bg: 'bg-kahoot-blue', shape: 'diamond', label: 'Losange' },
-  { index: 2, name: 'yellow', bg: 'bg-kahoot-yellow', shape: 'circle', label: 'Cercle' },
-  { index: 3, name: 'green', bg: 'bg-kahoot-green', shape: 'square', label: 'Carré' },
+  { index: 0, name: 'red', bg: 'bg-answer-red', text: 'text-white', border: 'border-answer-red', shape: 'triangle', label: 'Triangle' },
+  { index: 1, name: 'blue', bg: 'bg-answer-blue', text: 'text-white', border: 'border-answer-blue', shape: 'diamond', label: 'Losange' },
+  { index: 2, name: 'yellow', bg: 'bg-answer-yellow', text: 'text-gray-950', border: 'border-answer-yellow', shape: 'circle', label: 'Cercle' },
+  { index: 3, name: 'green', bg: 'bg-answer-green', text: 'text-white', border: 'border-answer-green', shape: 'square', label: 'Carré' },
 ] as const;
 
 export type ColorIndex = 0 | 1 | 2 | 3;
@@ -336,22 +337,31 @@ export function getColorClass(index: number): string {
   return getColorConfig(index).bg;
 }
 
-export function getShapeClass(index: number): string {
-  return `kahoot-btn-shape-${getColorConfig(index).shape}`;
+export function getTextClass(index: number): string {
+  return getColorConfig(index).text;
 }
 
-export function getShapeSvg(index: number): string {
+export function getBorderClass(index: number): string {
+  return getColorConfig(index).border;
+}
+
+/**
+ * Decorative shape icon (aria-hidden), drawn in `currentColor` so it follows the tile text color.
+ * `sizeClass` lets the container decide the size (default fits the 40–48px answer badge).
+ */
+export function getShapeSvg(index: number, sizeClass = 'w-6 h-6'): string {
   const shape = getColorConfig(index).shape;
+  const attrs = `class="${sizeClass}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"`;
 
   switch (shape) {
     case 'triangle':
-      return `<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v18m0 0l6-6m-6 6l-6-6" /></svg>`;
+      return `<svg ${attrs}><path d="M12 3.5 22 20.5H2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
     case 'diamond':
-      return `<svg class="w-10 h-10 text-white rotate-45" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>`;
+      return `<svg ${attrs}><path d="M12 2 22 12 12 22 2 12z"/></svg>`;
     case 'circle':
-      return `<svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /></svg>`;
+      return `<svg ${attrs}><circle cx="12" cy="12" r="9.5"/></svg>`;
     case 'square':
-      return `<svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" /></svg>`;
+      return `<svg ${attrs}><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/></svg>`;
     default:
       return '';
   }

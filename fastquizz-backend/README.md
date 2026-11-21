@@ -1,4 +1,7 @@
-# fastquizz - Backend
+# weQuiz - Backend
+
+> Technical identifiers (`fastquizz-backend` folder, npm package name, database name) keep the
+> legacy name on purpose: renaming them would break the Render root directory and existing data.
 
 Real-time quiz platform backend built with **NestJS**, **Fastify**, **WebSocket (ws)**, **PostgreSQL**, **Prisma**, and **Redis**.
 

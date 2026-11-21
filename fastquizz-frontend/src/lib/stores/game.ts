@@ -21,6 +21,7 @@ import type {
   GamePodiumEvent,
   GameStatus,
   HostCreateGamePayload,
+  LobbyPlayerJoinedEvent,
   PlayerFeedbackEvent,
   PlayerJoinPayload,
   PlayerPublic,
@@ -340,17 +341,8 @@ function createHostGameStore() {
 
     manager.on('lobby:player_joined', (data) => {
       update((s) => {
-        if (s.players.some((p) => p.id === data.playerId)) return s;
-        const player: PlayerPublic = {
-          id: data.playerId,
-          nickname: data.nickname,
-          score: 0,
-          streak: 0,
-          correctAnswersCount: 0,
-          connected: true,
-          joinedAt: Date.now(),
-        };
-        return { ...s, players: [...s.players, player] };
+        const players = withJoinedPlayer(s.players, data);
+        return players === s.players ? s : { ...s, players };
       });
     });
 
@@ -475,6 +467,31 @@ function createHostGameStore() {
 
 export type AnswerStatus = 'none' | 'sent' | 'accepted';
 
+/**
+ * Appends a `lobby:player_joined` arrival (deduplicated by id). Returns the same array when the
+ * player is already known, so callers can skip a store update.
+ */
+function withJoinedPlayer(players: PlayerPublic[], data: LobbyPlayerJoinedEvent): PlayerPublic[] {
+  if (players.some((p) => p.id === data.playerId)) return players;
+  return [
+    ...players,
+    {
+      id: data.playerId,
+      nickname: data.nickname,
+      score: 0,
+      streak: 0,
+      correctAnswersCount: 0,
+      connected: true,
+      joinedAt: Date.now(),
+    },
+  ];
+}
+
+/** Server snapshot lists are not ordered: show them in arrival order. */
+function byArrival(players: PlayerPublic[]): PlayerPublic[] {
+  return [...players].sort((a, b) => (a.joinedAt ?? 0) - (b.joinedAt ?? 0));
+}
+
 export interface PlayerGameState {
   pin: string | null;
   playerId: string | null;
@@ -488,6 +505,8 @@ export interface PlayerGameState {
   timeRemaining: number;
   /** ms */
   lobbyTimerRemaining: number;
+  /** Everyone in the game, in arrival order (snapshot from player:joined, then lobby:player_joined). */
+  players: PlayerPublic[];
   score: number;
   rank: number;
   streak: number;
@@ -519,6 +538,7 @@ function initialPlayerState(): PlayerGameState {
     questionCount: 0,
     timeRemaining: 0,
     lobbyTimerRemaining: 0,
+    players: [],
     score: 0,
     rank: 0,
     streak: 0,
@@ -643,9 +663,18 @@ function createPlayerGameStore() {
         nickname: data.nickname,
         quizTitle: data.quizTitle,
         questionCount: data.questionCount,
+        players: byArrival(data.players),
         isConnected: true,
         isReconnecting: wasFirstJoin ? false : s.isReconnecting,
       }));
+    });
+
+    // Later arrivals while in the lobby (broadcast to the whole room, players included).
+    manager.on('lobby:player_joined', (data) => {
+      update((s) => {
+        const players = withJoinedPlayer(s.players, data);
+        return players === s.players ? s : { ...s, players };
+      });
     });
 
     manager.on('game:state_changed', (data) => {
@@ -653,6 +682,7 @@ function createPlayerGameStore() {
       update((s) => {
         const next: PlayerGameState = {
           ...s,
+          players: byArrival(data.players),
           status: data.status,
           currentQuestionIndex: data.currentQuestionIndex,
           questionCount: data.questionCount,
@@ -873,6 +903,7 @@ export const playerAnswerStatus = derived(playerGameStore, ($s) => $s.answerStat
 export const playerPodium = derived(playerGameStore, ($s) => $s.podium);
 export const playerTimeRemaining = derived(playerGameStore, ($s) => $s.timeRemaining);
 export const playerLobbyTimerRemaining = derived(playerGameStore, ($s) => $s.lobbyTimerRemaining);
+export const playerLobbyPlayers = derived(playerGameStore, ($s) => $s.players);
 export const playerIsConnected = derived(playerGameStore, ($s) => $s.isConnected);
 export const playerIsReconnecting = derived(playerGameStore, ($s) => $s.isReconnecting);
 export const playerError = derived(playerGameStore, ($s) => $s.error);

@@ -3,6 +3,9 @@
   import { goto } from '$app/navigation';
   import { flashMessage, getStoredPlayerSession } from '$lib/stores';
   import { getColorConfig, getShapeSvg } from '$lib/types';
+  import { pageTitle } from '$lib/brand';
+  import BrandLogo from '$lib/components/BrandLogo.svelte';
+  import InstallButton from '$lib/components/InstallButton.svelte';
 
   // ADR 0001 §2: pin format ^[A-Z0-9]{6,8}$. 6 boxes by default; an 8-char pin (rare fallback)
   // arrives through ?code= and then gets 8 boxes.
@@ -124,41 +127,37 @@
 </script>
 
 <svelte:head>
-  <title>Rejoindre une partie - fastquizz</title>
+  <title>{pageTitle('Rejoindre une partie')}</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+<div class="min-h-dvh bg-gradient-to-b from-primary-50/60 to-white">
   {#if formError}
-    <div class="fixed top-0 left-0 right-0 z-50 bg-red-500 text-white text-center py-2 text-sm animate-slide-down" role="alert">
+    <div class="fixed top-0 inset-x-0 z-50 bg-red-500 text-white text-center px-3 py-2 text-sm animate-slide-down pt-safe" role="alert">
       {formError}
     </div>
   {/if}
 
-  <main class="min-h-screen flex items-center justify-center px-4 py-12">
+  <main class="min-h-dvh flex items-center justify-center px-4 py-10" style="padding-top: max(2.5rem, env(safe-area-inset-top)); padding-bottom: max(2.5rem, env(safe-area-inset-bottom));">
     <div class="w-full max-w-md animate-fade-in">
       <!-- Logo -->
-      <div class="text-center mb-10">
-        <div class="w-20 h-20 mx-auto rounded-2xl bg-primary-500 flex items-center justify-center mb-6">
-          <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-        </div>
-        <h1 class="font-display font-bold text-3xl text-gray-900 mb-2">Rejoindre une partie</h1>
+      <div class="text-center mb-8 sm:mb-10">
+        <BrandLogo size="lg" class="mb-6" />
+        <h1 class="font-display font-bold text-2xl sm:text-3xl text-gray-950 mb-2">Rejoindre une partie</h1>
         <p class="text-gray-500">Entrez le code salon affiché sur l'écran</p>
       </div>
 
-      <!-- Room Code Input - Large buttons like Kahoot -->
-      <form on:submit|preventDefault={handleJoin} class="space-y-6" novalidate>
-        <div class="card p-6">
+      <form on:submit|preventDefault={handleJoin} class="space-y-5 sm:space-y-6" novalidate>
+        <div class="card p-4 sm:p-6">
           <label class="label text-center block mb-4" for="code-input-0">Code salon</label>
 
-          <!-- One box per character (6 by default, 8 when an 8-char code comes from the link) -->
-          <div class="flex items-center justify-center gap-2 sm:gap-3 mb-6" role="group" aria-label="Code salon">
+          <!-- One box per character (6 by default, 8 when an 8-char code comes from the link).
+               Boxes share the available width so 8 boxes still fit on a 320px screen. -->
+          <div class="flex items-center justify-center gap-1.5 sm:gap-3 mb-6" role="group" aria-label="Code salon">
             {#each chars as char, i}
               <input
                 id={`code-input-${i}`}
                 type="text"
-                class="w-11 h-12 sm:w-14 sm:h-14 text-center text-2xl sm:text-3xl font-bold bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all"
+                class="flex-1 min-w-0 max-w-[3.5rem] h-12 sm:h-14 text-center text-xl min-[400px]:text-2xl sm:text-3xl font-bold uppercase bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all"
                 maxlength="1"
                 autocomplete="off"
                 autocapitalize="characters"
@@ -194,11 +193,11 @@
         <!-- Join Button -->
         <button
           type="submit"
-          class="btn-primary w-full py-4 text-lg { !canSubmit ? 'opacity-50 cursor-not-allowed' : '' }"
+          class="btn-primary w-full py-4 text-lg"
           disabled={!canSubmit}
         >
           Rejoindre la partie
-          <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
           </svg>
         </button>
@@ -206,13 +205,13 @@
         <!-- Color legend -->
         <div class="card p-4 bg-gray-50">
           <p class="text-sm text-gray-600 text-center mb-3">Les réponses apparaissent sous forme de :</p>
-          <div class="flex items-center justify-center gap-4">
-            {#each [0,1,2,3] as idx}
-              <div class="flex items-center gap-2">
-                <div class="w-10 h-10 rounded-xl {getColorConfig(idx).bg} flex items-center justify-center">
-                  {@html getShapeSvg(idx)}
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {#each [0, 1, 2, 3] as idx}
+              <div class="flex items-center gap-2 min-w-0">
+                <div class="w-9 h-9 shrink-0 rounded-xl {getColorConfig(idx).bg} {getColorConfig(idx).text} flex items-center justify-center">
+                  {@html getShapeSvg(idx, 'w-5 h-5')}
                 </div>
-                <span class="text-sm font-medium text-gray-700 capitalize">{getColorConfig(idx).label}</span>
+                <span class="text-sm font-medium text-gray-700 truncate">{getColorConfig(idx).label}</span>
               </div>
             {/each}
           </div>
@@ -220,7 +219,10 @@
       </form>
 
       <!-- Footer -->
-      <p class="text-center text-gray-400 text-sm mt-8">
+      <div class="mt-6 flex justify-center">
+        <InstallButton class="btn-ghost text-primary-700 hover:bg-primary-50 text-sm" />
+      </div>
+      <p class="text-center text-gray-400 text-sm mt-4">
         <a href="/" class="hover:text-primary-500 transition-colors">← Retour à l'accueil</a>
       </p>
     </div>

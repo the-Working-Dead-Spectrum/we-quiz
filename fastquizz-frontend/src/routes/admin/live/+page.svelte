@@ -18,6 +18,8 @@
   } from '$lib/stores';
   import { authStore } from '$lib/stores/auth';
   import { getColorConfig, getShapeSvg } from '$lib/types';
+  import { pageTitle } from '$lib/brand';
+  import BrandLogo from '$lib/components/BrandLogo.svelte';
 
   let mounted = false;
   let fatalHandled = false;
@@ -105,8 +107,16 @@
     return getColorConfig(index).bg;
   }
 
-  function getShapeSvgSafe(index: number): string {
-    return getShapeSvg(index);
+  function getOptionTextClass(index: number): string {
+    return getColorConfig(index).text;
+  }
+
+  function getOptionBorderClass(index: number): string {
+    return getColorConfig(index).border;
+  }
+
+  function getShapeSvgSafe(index: number, sizeClass = 'w-5 h-5'): string {
+    return getShapeSvg(index, sizeClass);
   }
 
   const STATUS_LABELS: Record<string, string> = {
@@ -118,38 +128,38 @@
 </script>
 
 <svelte:head>
-  <title>Live - fastquizz</title>
+  <title>{pageTitle('Live')}</title>
+  <meta name="theme-color" content="#0b141f" />
 </svelte:head>
 
 <svelte:window on:keydown={handleKeyDown} />
 
-<div class="min-h-screen bg-gray-900 text-white">
+<div class="min-h-dvh bg-gray-950 text-white">
   <!-- Top Bar -->
-  <header class="fixed top-0 left-0 right-0 z-40 bg-gray-900/80 backdrop-blur border-b border-gray-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <div class="flex items-center gap-4">
-          <div class="w-8 h-8 rounded-xl bg-primary-500 flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <div>
-            <h1 class="font-display font-semibold text-lg">{$hostQuizTitle}</h1>
-            <p class="text-xs text-gray-400">PIN: {$hostPin ?? ''}</p>
+  <header class="fixed top-0 inset-x-0 z-40 bg-gray-950/85 backdrop-blur border-b border-gray-800 pt-safe">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between gap-2 h-14 sm:h-16">
+        <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <BrandLogo size="sm" tone="dark" markOnly href={null} />
+          <div class="min-w-0">
+            <h1 class="font-display font-semibold text-sm sm:text-lg truncate">{$hostQuizTitle}</h1>
+            <p class="text-xs text-gray-400">PIN <span class="font-mono tracking-wider text-gray-200">{$hostPin ?? ''}</span></p>
           </div>
         </div>
 
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium { $hostIsConnected ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400' }">
+        <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium { $hostIsConnected ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400' }">
             <span class="w-2 h-2 rounded-full { $hostIsConnected ? 'bg-green-500' : 'bg-red-500' }" />
-            {$hostIsConnected ? 'Live' : $hostGameStore.isReconnecting ? 'Reconnexion…' : 'Déconnecté'}
+            <span class="hidden min-[400px]:inline">{$hostIsConnected ? 'Live' : $hostGameStore.isReconnecting ? 'Reconnexion…' : 'Déconnecté'}</span>
           </div>
-          <span class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-800 border border-gray-700">
-            {$hostPlayerCount} joueurs
+          <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-800 border border-gray-700 tabular-nums" aria-label="{$hostPlayerCount} joueurs">
+            <span aria-hidden="true">👥</span> {$hostPlayerCount}
           </span>
-          <button on:click={handleLogout} class="btn-ghost text-sm px-3 py-1.5">
-            Déconnexion
+          <button on:click={handleLogout} class="btn-ghost text-gray-300 hover:bg-gray-800 text-sm px-2 sm:px-3" aria-label="Déconnexion">
+            <svg class="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span class="hidden sm:inline">Déconnexion</span>
           </button>
         </div>
       </div>
@@ -157,13 +167,13 @@
   </header>
 
   {#if $hostError}
-    <div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white px-6 py-3 rounded-xl shadow-lg animate-slide-down">
+    <div class="fixed left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 bg-red-500/95 text-white px-4 sm:px-6 py-3 rounded-xl shadow-lg animate-slide-down text-center" style="top: calc(4.5rem + env(safe-area-inset-top));" role="alert">
       {$hostError}
     </div>
   {/if}
 
   <!-- Main Content -->
-  <main class="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
+  <main class="px-3 sm:px-6 lg:px-8" style="padding-top: calc(4.75rem + env(safe-area-inset-top)); padding-bottom: calc(4rem + env(safe-area-inset-bottom));">
     <div class="max-w-5xl mx-auto">
       <!-- Status Bar -->
       <div class="mb-6 animate-fade-in">
@@ -187,15 +197,15 @@
       <!-- Content based on status -->
       {#if $hostStatus === 'LOBBY'}
         <!-- Waiting to start -->
-        <div class="card bg-gray-800 border-gray-700 text-center py-16 animate-fade-in">
-          <svg class="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="card bg-gray-900 border-gray-800 text-center py-12 sm:py-16 px-4 animate-fade-in">
+          <svg class="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <h2 class="text-2xl font-semibold mb-2">Prêt à commencer</h2>
           <p class="text-gray-400 mb-6">{$hostPlayerCount} joueur{$hostPlayerCount > 1 ? 's' : ''} connecté{$hostPlayerCount > 1 ? 's' : ''}</p>
           <button
             on:click={handleStartGame}
-            class="btn-primary px-8 py-3"
+            class="btn-primary w-full sm:w-auto px-8 py-3"
             disabled={$hostPlayerCount === 0 || !$hostIsConnected}
           >
             Lancer la première question
@@ -210,33 +220,33 @@
         {#if $hostCurrentQuestion}
           <div class="animate-fade-in">
             <!-- Question Card -->
-            <div class="card bg-gray-800 border-gray-700 mb-6">
-              <div class="p-6">
-                <div class="flex items-start justify-between mb-4">
-                  <div>
-                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-primary-500/20 text-primary-400 mb-2 block">
+            <div class="card bg-gray-900 border-gray-800 mb-4 sm:mb-6">
+              <div class="p-4 sm:p-6">
+                <div class="flex flex-col-reverse sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                  <div class="min-w-0">
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-primary-500/15 text-primary-300 mb-2">
                       Question {$hostCurrentQuestion.questionIndex + 1} / {$hostCurrentQuestion.questionCount}
                     </span>
-                    <h2 class="text-2xl sm:text-3xl font-semibold leading-tight">{$hostCurrentQuestion.questionText}</h2>
+                    <h2 class="font-display text-xl sm:text-3xl font-semibold leading-snug text-balance">{$hostCurrentQuestion.questionText}</h2>
                   </div>
-                  <div class="text-right">
-                    <p class="text-3xl font-display font-bold text-primary-400">{formatTime($hostTimeRemaining)}</p>
-                    <p class="text-gray-500 text-sm">{$hostAnswerCount.answered} / {$hostAnswerCount.total} réponses</p>
+                  <div class="flex sm:flex-col items-baseline sm:items-end justify-between gap-2 shrink-0">
+                    <p class="text-3xl sm:text-4xl font-display font-bold text-primary-300 tabular-nums">{formatTime($hostTimeRemaining)}</p>
+                    <p class="text-gray-400 text-sm tabular-nums">{$hostAnswerCount.answered} / {$hostAnswerCount.total} réponses</p>
                   </div>
                 </div>
 
                 {#if $hostCurrentQuestion.imageUrl}
-                  <img src={$hostCurrentQuestion.imageUrl} alt="Question" class="rounded-xl max-h-64 mx-auto mb-4" />
+                  <img src={$hostCurrentQuestion.imageUrl} alt="" class="rounded-xl max-h-48 sm:max-h-64 mx-auto mb-4 object-contain" />
                 {/if}
 
                 <!-- Options Grid -->
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
                   {#each $hostCurrentQuestion.options as option}
-                    <div class="p-4 rounded-xl border-2 {getOptionColorClass(option.colorIndex)} bg-gray-800/50 flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-lg {getOptionColorClass(option.colorIndex)} flex items-center justify-center flex-shrink-0">
+                    <div class="p-3 sm:p-4 rounded-xl border-l-8 {getOptionBorderClass(option.colorIndex)} bg-gray-800/70 flex items-center gap-3">
+                      <div class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-lg {getOptionColorClass(option.colorIndex)} {getOptionTextClass(option.colorIndex)} flex items-center justify-center">
                         {@html getShapeSvgSafe(option.colorIndex)}
                       </div>
-                      <span class="font-medium text-lg">{option.text}</span>
+                      <span class="flex-1 min-w-0 font-medium text-base sm:text-lg leading-snug">{option.text}</span>
                     </div>
                   {/each}
                 </div>
@@ -244,10 +254,10 @@
             </div>
 
             <!-- Live Answer Count -->
-            <div class="card bg-gray-800 border-gray-700 p-4 animate-pulse-slow">
-              <div class="flex items-center justify-between">
+            <div class="card bg-gray-900 border-gray-800 p-4">
+              <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center">
+                  <div class="w-10 h-10 shrink-0 rounded-xl bg-primary-500/15 flex items-center justify-center">
                     <svg class="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                     </svg>
@@ -271,10 +281,10 @@
         {#if $hostQuestionResults}
           <div class="animate-fade-in">
             <!-- Correct Answer Reveal -->
-            <div class="card bg-gray-800 border-gray-700 mb-6 overflow-hidden">
-              <div class="p-6">
+            <div class="card bg-gray-900 border-gray-800 mb-4 sm:mb-6 overflow-hidden">
+              <div class="p-4 sm:p-6">
                 <div class="flex items-center gap-4 mb-4">
-                  <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+                  <div class="w-12 h-12 shrink-0 rounded-xl bg-green-500/20 flex items-center justify-center">
                     <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -301,16 +311,16 @@
                   {#if resultQuestion}
                     {#each resultQuestion.options as option (option.id)}
                       {@const votes = $hostQuestionResults.answerDistribution[option.id] ?? 0}
-                      <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-lg {getOptionColorClass(option.colorIndex)} flex items-center justify-center flex-shrink-0">
+                      <div class="flex items-center gap-3 sm:gap-4">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg {getOptionColorClass(option.colorIndex)} {getOptionTextClass(option.colorIndex)} flex items-center justify-center flex-shrink-0">
                           {@html getShapeSvgSafe(option.colorIndex)}
                         </div>
-                        <div class="flex-1">
-                          <div class="flex items-center justify-between text-sm mb-1">
-                            <span class="font-medium">{option.text}</span>
-                            <span class="text-gray-400">{votes} votes</span>
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-start justify-between gap-2 text-sm mb-1">
+                            <span class="font-medium min-w-0">{option.text}</span>
+                            <span class="shrink-0 text-gray-400 tabular-nums">{votes} vote{votes > 1 ? 's' : ''}</span>
                           </div>
-                          <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                          <div class="h-2.5 bg-gray-800 rounded-full overflow-hidden">
                             <div
                               class="h-full {getOptionColorClass(option.colorIndex)} transition-all duration-500"
                               style="width: {totalVotes > 0 ? (votes / totalVotes) * 100 : 0}%"
@@ -332,32 +342,29 @@
             </div>
 
             <!-- Leaderboard -->
-            <div class="card bg-gray-800 border-gray-700">
-              <div class="p-4 border-b border-gray-700 flex items-center justify-between">
+            <div class="card bg-gray-900 border-gray-800">
+              <div class="p-4 border-b border-gray-800 flex items-center justify-between">
                 <h3 class="font-semibold">Classement provisoire</h3>
                 <span class="text-sm text-gray-400">Top {$hostQuestionResults.leaderboard.length}</span>
               </div>
-              <div class="divide-y divide-gray-700">
+              <ol class="divide-y divide-gray-800">
                 {#each $hostQuestionResults.leaderboard as entry, index (entry.playerId)}
-                  <div class="p-4 flex items-center gap-4 hover:bg-gray-700/50 transition-colors">
-                    <span class="w-8 text-center text-lg font-display font-bold {index < 3 ? 'text-yellow-400' : 'text-gray-400'}">
+                  <li class="px-3 py-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+                    <span class="w-8 shrink-0 text-center text-lg font-display font-bold {index < 3 ? 'text-amber-300' : 'text-gray-400'}">
                       {entry.rank}
                     </span>
-                    <div class="flex-1 min-w-0">
-                      <p class="font-medium truncate">{entry.nickname}</p>
-                      <p class="text-sm text-gray-400">{entry.score} pts</p>
-                    </div>
-                    <span class="text-gray-500">{entry.score} pts</span>
-                  </div>
+                    <p class="flex-1 min-w-0 font-medium truncate">{entry.nickname}</p>
+                    <span class="shrink-0 font-display font-semibold tabular-nums {index < 3 ? 'text-amber-300' : 'text-gray-200'}">{entry.score} pts</span>
+                  </li>
                 {/each}
-              </div>
+              </ol>
             </div>
 
-            <!-- Next Button -->
-            <div class="mt-6 text-center animate-fade-in">
+            <!-- Next Button (sticky on phones so it stays reachable under a long leaderboard) -->
+            <div class="mt-6 text-center animate-fade-in sticky bottom-0 sm:static -mx-3 sm:mx-0 px-3 sm:px-0 py-3 sm:py-0 bg-gray-950/90 sm:bg-transparent backdrop-blur sm:backdrop-blur-none" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom));">
               <button
                 on:click={handleNextStep}
-                class="btn-primary px-8 py-3 text-lg"
+                class="btn-primary w-full sm:w-auto px-8 py-3 text-lg"
                 disabled={!$hostIsConnected}
               >
                 {isLastQuestion ? 'Voir le podium' : 'Question suivante'}
@@ -365,7 +372,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
                 </svg>
               </button>
-              <p class="text-gray-500 text-sm mt-2">Ou appuyez sur Espace/Entrée</p>
+              <p class="hidden md:block text-gray-500 text-sm mt-2">Ou appuyez sur Espace/Entrée</p>
             </div>
           </div>
         {/if}
@@ -374,86 +381,57 @@
         <!-- Final Podium -->
         {#if $hostPodium}
           <div class="animate-fade-in">
-            <!-- Podium Top 3 -->
-            <div class="mb-8">
-              <div class="flex items-end justify-center gap-4 relative">
-                <!-- 2nd place -->
-                <div class="flex flex-col items-center">
-                  <div class="w-24 h-24 rounded-t-2xl bg-gray-700 border-4 border-gray-600 flex items-center justify-center mb-2 relative">
-                    <span class="text-3xl font-display font-bold text-gray-400">2</span>
-                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gray-600 border-2 border-gray-700 flex items-center justify-center">
-                      <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M13.493 3.268c-.693-.08-1.384.195-1.754.746l-2.842 4.27-3.816-.823c-.832-.18-1.686.388-1.866 1.218l-.766 3.208 2.725 2.66c.24.234.376.584.376.945l-.001 1.485c0 .743-.904 1.21-1.505.795l-2.67-2.224-.877 3.248c-.083.309-.037.629.211.886.148.153.335.276.533.362.273.122.554.186.84.186h11.002c.286 0 .567-.064.84-.186.198-.086.385-.209.533-.362.248-.257.294-.577.211-.886l-.877-3.248-2.67 2.224c-.602.414-1.505-.053-1.505-.794l.001-1.485c0-.36.136-.71.377-.944l2.725-2.66-.766-3.208c-.18-.831-.317-1.72.414-2.37l3.817-.823 2.842 4.27c.37.55 1.06.825 1.753.745l2.233-.38c.693-.119 1.195-.768.959-1.472l-1.13-3.372c-.114-.34-.46-.591-.807-.591H13.493z" />
-                      </svg>
+            <!-- Podium Top 3: 2nd · 1st · 3rd, steps scale down on phones -->
+            <div class="mb-6 sm:mb-8 pt-6">
+              <div class="grid grid-cols-3 items-end gap-2 sm:gap-4 max-w-xl mx-auto">
+                {#each [1, 0, 2] as place}
+                  {@const entry = $hostPodium.podium[place]}
+                  {@const isFirst = place === 0}
+                  <div class="flex flex-col items-center min-w-0">
+                    <span class="text-2xl sm:text-3xl mb-1" aria-hidden="true">{place === 0 ? '🥇' : place === 1 ? '🥈' : '🥉'}</span>
+                    <p class="w-full text-center font-semibold truncate {isFirst ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}">{entry?.nickname || '—'}</p>
+                    <p class="text-center text-xs sm:text-sm font-medium tabular-nums mb-2 {isFirst ? 'text-amber-300' : 'text-gray-400'}">{entry?.score ?? 0} pts</p>
+                    <div
+                      class="w-full rounded-t-2xl flex items-start justify-center pt-2 sm:pt-3 font-display font-bold
+                        {isFirst ? 'h-28 sm:h-36 bg-gradient-to-b from-amber-300 to-amber-500 text-gray-950 text-4xl sm:text-5xl' : place === 1 ? 'h-20 sm:h-28 bg-gray-700 text-gray-300 text-3xl sm:text-4xl' : 'h-14 sm:h-20 bg-gray-800 text-gray-400 text-2xl sm:text-3xl'}"
+                    >
+                      {place + 1}
                     </div>
-                  </div>
-                  <p class="text-center mt-2 font-medium">{$hostPodium.podium[1]?.nickname || '—'}</p>
-                  <p class="text-center text-gray-400 text-sm">{$hostPodium.podium[1]?.score || 0} pts</p>
-                </div>
-
-                <!-- 1st place -->
-                <div class="flex flex-col items-center">
-                  <div class="w-32 h-32 rounded-t-2xl bg-yellow-500 border-4 border-yellow-400 flex items-center justify-center mb-2 relative">
-                    <span class="text-4xl font-display font-bold text-gray-900">1</span>
-                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-yellow-400 border-2 border-yellow-300 flex items-center justify-center animate-bounce-slow">
-                      <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M13.493 3.268c-.693-.08-1.384.195-1.754.746l-2.842 4.27-3.816-.823c-.832-.18-1.686.388-1.866 1.218l-.766 3.208 2.725 2.66c.24.234.376.584.376.945l-.001 1.485c0 .743-.904 1.21-1.505.795l-2.67-2.224-.877 3.248c-.083.309-.037.629.211.886.148.153.335.276.533.362.273.122.554.186.84.186h11.002c.286 0 .567-.064.84-.186.198-.086.385-.209.533-.362.248-.257.294-.577.211-.886l-.877-3.248-2.67 2.224c-.602.414-1.505-.053-1.505-.794l.001-1.485c0-.36.136-.71.377-.944l2.725-2.66-.766-3.208c-.18-.831-.317-1.72.414-2.37l3.817-.823 2.842 4.27c.37.55 1.06.825 1.753.745l2.233-.38c.693-.119 1.195-.768.959-1.472l-1.13-3.372c-.114-.34-.46-.591-.807-.591H13.493z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <p class="text-center mt-2 font-semibold text-lg">{$hostPodium.podium[0]?.nickname || '—'}</p>
-                  <p class="text-center text-yellow-400 text-sm font-medium">{$hostPodium.podium[0]?.score || 0} pts</p>
-                </div>
-
-                <!-- 3rd place -->
-                <div class="flex flex-col items-center">
-                  <div class="w-24 h-24 rounded-t-2xl bg-gray-700 border-4 border-gray-600 flex items-center justify-center mb-2 relative">
-                    <span class="text-3xl font-display font-bold text-gray-400">3</span>
-                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gray-600 border-2 border-gray-700 flex items-center justify-center">
-                      <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M13.493 3.268c-.693-.08-1.384.195-1.754.746l-2.842 4.27-3.816-.823c-.832-.18-1.686.388-1.866 1.218l-.766 3.208 2.725 2.66c.24.234.376.584.376.945l-.001 1.485c0 .743-.904 1.21-1.505.795l-2.67-2.224-.877 3.248c-.083.309-.037.629.211.886.148.153.335.276.533.362.273.122.554.186.84.186h11.002c.286 0 .567-.064.84-.186.198-.086.385-.209.533-.362.248-.257.294-.577.211-.886l-.877-3.248-2.67 2.224c-.602.414-1.505-.053-1.505-.794l.001-1.485c0-.36.136-.71.377-.944l2.725-2.66-.766-3.208c-.18-.831-.317-1.72.414-2.37l3.817-.823 2.842 4.27c.37.55 1.06.825 1.753.745l2.233-.38c.693-.119 1.195-.768.959-1.472l-1.13-3.372c-.114-.34-.46-.591-.807-.591H13.493z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <p class="text-center mt-2 font-medium">{$hostPodium.podium[2]?.nickname || '—'}</p>
-                  <p class="text-center text-gray-400 text-sm">{$hostPodium.podium[2]?.score || 0} pts</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Full Leaderboard -->
-            <div class="card bg-gray-800 border-gray-700 mb-6">
-              <div class="p-4 border-b border-gray-700">
-                <h3 class="font-semibold">Classement final</h3>
-              </div>
-              <div class="divide-y divide-gray-700 max-h-[400px] overflow-y-auto">
-                {#each $hostPodium.finalLeaderboard as entry, index}
-                  <div class="p-4 flex items-center gap-4 hover:bg-gray-700/50 transition-colors">
-                    <span class="w-10 text-center text-lg font-display font-bold {index < 3 ? 'text-yellow-400' : 'text-gray-400'}">
-                      {entry.rank}
-                    </span>
-                    <div class="flex-1 min-w-0">
-                      <p class="font-medium truncate">{entry.nickname}</p>
-                      <p class="text-sm text-gray-400">{entry.correctAnswersCount} bonnes réponses</p>
-                    </div>
-                    <span class="font-display font-bold text-xl {index < 3 ? 'text-yellow-400' : 'text-white'}">
-                      {entry.score} pts
-                    </span>
                   </div>
                 {/each}
               </div>
             </div>
 
+            <!-- Full Leaderboard -->
+            <div class="card bg-gray-900 border-gray-800 mb-6">
+              <div class="p-4 border-b border-gray-800">
+                <h3 class="font-semibold">Classement final</h3>
+              </div>
+              <ol class="divide-y divide-gray-800 max-h-[50vh] overflow-y-auto overscroll-contain">
+                {#each $hostPodium.finalLeaderboard as entry, index}
+                  <li class="px-3 py-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+                    <span class="w-8 shrink-0 text-center text-lg font-display font-bold {index < 3 ? 'text-amber-300' : 'text-gray-400'}">
+                      {entry.rank}
+                    </span>
+                    <div class="flex-1 min-w-0">
+                      <p class="font-medium truncate">{entry.nickname}</p>
+                      <p class="text-xs sm:text-sm text-gray-400">{entry.correctAnswersCount} bonne{entry.correctAnswersCount > 1 ? 's' : ''} réponse{entry.correctAnswersCount > 1 ? 's' : ''}</p>
+                    </div>
+                    <span class="shrink-0 font-display font-bold text-base sm:text-xl tabular-nums {index < 3 ? 'text-amber-300' : 'text-white'}">
+                      {entry.score} pts
+                    </span>
+                  </li>
+                {/each}
+              </ol>
+            </div>
+
             <!-- End Game -->
             <div class="text-center animate-fade-in">
-              <button
-                on:click={handleEndGame}
-                class="btn-secondary px-8 py-3 text-lg"
-              >
-                Terminer et revenir au tableau de bord
-                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button on:click={handleEndGame} class="btn-primary w-full sm:w-auto px-8 py-3 text-base sm:text-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
+                Terminer et revenir au tableau de bord
               </button>
             </div>
           </div>
@@ -462,12 +440,10 @@
     </div>
   </main>
 
-  <!-- Keyboard hint -->
-  <div class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-800/80 backdrop-blur text-gray-400 text-xs px-3 py-2 rounded-lg">
-    {#if $hostStatus === 'QUESTION_RESULT'}
+  <!-- Keyboard hint (desktop / projector only) -->
+  {#if $hostStatus === 'QUESTION_RESULT'}
+    <div class="hidden md:block fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-800/80 backdrop-blur text-gray-400 text-xs px-3 py-2 rounded-lg">
       Appuyez sur <kbd class="px-1.5 py-0.5 bg-gray-700 rounded">Espace</kbd> ou <kbd class="px-1.5 py-0.5 bg-gray-700 rounded">Entrée</kbd> pour continuer
-    {:else if $hostStatus === 'PODIUM'}
-      Partie terminée
-    {/if}
-  </div>
+    </div>
+  {/if}
 </div>

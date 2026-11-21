@@ -1,31 +1,54 @@
 /** @type {import('tailwindcss').Config} */
+// Brand palette derived from the We.info logo (src/logo-weinfo.png):
+//   brand blue #2c83c0 → primary-500, brand navy #0b141f → gray-950.
+// `gray` is overridden with a navy-tinted scale so every neutral (text, borders, dark game
+// screens) matches the logo's ink color without touching each component.
 export default {
   content: ['./src/**/*.{html,js,svelte,ts}'],
   theme: {
     extend: {
       colors: {
         primary: {
-          50: '#fef7ee',
-          100: '#fdedd6',
-          200: '#fad9ad',
-          300: '#f6c073',
-          400: '#f1a03c',
-          500: '#ed8915',
-          600: '#e06d0d',
-          700: '#b9510e',
-          800: '#944113',
-          900: '#773613',
+          50: '#eef6fc',
+          100: '#d7eaf7',
+          200: '#b3d6ef',
+          300: '#82bbe3',
+          400: '#4f9cd3',
+          500: '#2c83c0',
+          600: '#2169a1',
+          700: '#1c5583',
+          800: '#1b486c',
+          900: '#1b3d5a',
+          950: '#12273b',
         },
-        kahoot: {
-          red: '#e62e2e',
-          blue: '#0078d7',
-          yellow: '#f7c91a',
-          green: '#2eb82e',
+        gray: {
+          50: '#f5f7fa',
+          100: '#eaeef3',
+          200: '#d5dce5',
+          300: '#b3bfcd',
+          400: '#8394a8',
+          500: '#5f7187',
+          600: '#47576b',
+          700: '#334256',
+          800: '#1d2a3a',
+          900: '#121d2b',
+          950: '#0b141f',
+        },
+        // Answer tiles. Contrast checked for their text color (white, or gray-950 on yellow).
+        answer: {
+          red: '#d6303a',
+          blue: '#2169a1',
+          yellow: '#f2b705',
+          green: '#16803c',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        display: ['Poppins', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+      },
+      spacing: {
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -35,7 +58,7 @@ export default {
         'slide-up': 'slideUp 0.4s ease-out',
         'slide-down': 'slideDown 0.4s ease-out',
         'scale-in': 'scaleIn 0.2s ease-out',
-        'shake': 'shake 0.5s ease-in-out',
+        shake: 'shake 0.5s ease-in-out',
       },
       keyframes: {
         fadeIn: {

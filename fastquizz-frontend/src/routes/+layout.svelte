@@ -1,14 +1,15 @@
 <script lang="ts">
   import '../app.css';
-  import { onMount } from 'svelte';
-  import { authStore } from '$lib/stores';
+  import { page } from '$app/stores';
+  import InstallPrompt from '$lib/components/InstallPrompt.svelte';
 
-  // Initialize auth on mount
-  onMount(() => {
-    // Auth store initializes itself
-  });
+  // Never interrupt a live game or a lobby with the install banner.
+  const FOCUS_ROUTES = ['/player/game', '/admin/live', '/admin/lobby'];
+  $: inFocusRoute = FOCUS_ROUTES.some((route) => $page.url.pathname.startsWith(route));
 </script>
 
-<div class="min-h-screen">
+<div class="min-h-dvh">
   <slot />
 </div>
+
+<InstallPrompt suppressed={inFocusRoute} />

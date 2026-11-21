@@ -3,6 +3,8 @@
   import { goto } from '$app/navigation';
   import { api } from '$lib/utils/api';
   import { flashMessage } from '$lib/stores';
+  import { pageTitle } from '$lib/brand';
+  import BrandLogo from '$lib/components/BrandLogo.svelte';
 
   let quizzes: Array<{
     id: string;
@@ -49,26 +51,20 @@
 </script>
 
 <svelte:head>
-  <title>Quiz publics - fastquizz</title>
+  <title>{pageTitle('Quiz publics')}</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50">
-  <header class="bg-white border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 py-4">
-      <a href="/" class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-xl bg-primary-500 flex items-center justify-center">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-        </div>
-        <span class="font-display font-bold text-xl text-gray-900">fastquizz</span>
-      </a>
+<div class="min-h-dvh bg-gray-50">
+  <header class="bg-white border-b border-gray-100 pt-safe">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
+      <BrandLogo size="md" />
+      <a href="/player/join" class="btn-primary text-sm px-3 sm:px-5">Rejoindre</a>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 py-12">
-    <div class="mb-8">
-      <h1 class="font-display font-bold text-3xl text-gray-900 mb-2">Quiz publics</h1>
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-12" style="padding-bottom: calc(3rem + env(safe-area-inset-bottom));">
+    <div class="mb-6 sm:mb-8">
+      <h1 class="font-display font-bold text-2xl sm:text-3xl text-gray-950 mb-2">Quiz publics</h1>
       <p class="text-gray-500">Découvrez et jouez aux quiz partagés par la communauté</p>
     </div>
 
@@ -108,16 +104,16 @@
         <a href="/auth/login" class="btn-primary">Se connecter pour créer</a>
       </div>
     {:else}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {#each quizzes as quiz}
-          <div class="card-hover group">
-            <div class="p-6">
-              <div class="flex items-start justify-between mb-3">
-                <h3 class="font-display font-semibold text-lg text-gray-900 group-hover:text-primary-500 transition-colors line-clamp-2">
+          <div class="card-hover group flex flex-col">
+            <div class="p-4 sm:p-6 flex flex-col flex-1">
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <h3 class="font-display font-semibold text-lg text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2 min-w-0">
                   {quiz.title}
                 </h3>
-                <span class="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-700 rounded-full">
-                  {quiz.questions.length} questions
+                <span class="shrink-0 px-2 py-1 text-xs font-medium bg-primary-100 text-primary-700 rounded-full whitespace-nowrap">
+                  {quiz.questions.length} question{quiz.questions.length > 1 ? 's' : ''}
                 </span>
               </div>
 
@@ -125,16 +121,16 @@
                 <p class="text-sm text-gray-500 mb-4 line-clamp-2">{quiz.description}</p>
               {/if}
 
-              <div class="flex items-center justify-between text-xs text-gray-400 mb-4">
-                <span>Par {quiz.author?.name || 'Anonyme'}</span>
+              <div class="flex items-center justify-between gap-2 text-xs text-gray-400 mb-4 mt-auto">
+                <span class="truncate">Par {quiz.author?.name || 'Anonyme'}</span>
                 <span>{formatDate(quiz.createdAt)}</span>
               </div>
 
               <button
                 on:click={() => handlePlayQuiz(quiz.id)}
-                class="btn-primary w-full py-2"
+                class="btn-primary w-full"
               >
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>

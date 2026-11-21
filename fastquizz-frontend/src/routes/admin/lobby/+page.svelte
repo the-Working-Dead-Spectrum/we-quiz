@@ -14,9 +14,16 @@
     flashMessage,
   } from '$lib/stores';
   import { authStore } from '$lib/stores/auth';
+  import { pageTitle } from '$lib/brand';
+  import BrandLogo from '$lib/components/BrandLogo.svelte';
 
   // ADR 0001 §8: lobby duration.
   const LOBBY_DURATION_MS = 59000;
+
+  // Host shown in the join instructions (the real deployed domain, not a hard-coded one).
+  let joinHost = '';
+  let copied = false;
+  let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 
   let mounted = false;
   // Set right before navigating to /admin/live so the cleanup keeps the socket open.
@@ -31,6 +38,7 @@
   }
 
   onMount(() => {
+    joinHost = window.location.host;
     const params = new URLSearchParams(window.location.search);
     const pin = (params.get('pin') || '').trim().toUpperCase();
     const quizId = params.get('quizId') || '';
@@ -85,8 +93,16 @@
     hostGameStore.startGame();
   }
 
-  function copyCode() {
-    if ($hostPin) navigator.clipboard.writeText($hostPin);
+  async function copyCode() {
+    if (!$hostPin) return;
+    try {
+      await navigator.clipboard.writeText($hostPin);
+      copied = true;
+      clearTimeout(copiedTimer);
+      copiedTimer = setTimeout(() => (copied = false), 1800);
+    } catch {
+      /* clipboard unavailable (insecure context): the code stays selectable */
+    }
   }
 
   // Window-level shortcut (no keydown handler on a non-interactive element). Keys pressed on a
@@ -108,156 +124,142 @@
 </script>
 
 <svelte:head>
-  <title>Lobby - fastquizz</title>
+  <title>{pageTitle('Lobby')}</title>
+  <meta name="theme-color" content="#0b141f" />
 </svelte:head>
 
 <svelte:window on:keydown={handleKeyDown} />
 
-<div class="min-h-screen bg-gray-900 text-white">
-  <!-- Connection Status -->
-  <div class="fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium { $hostIsConnected ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400' }">
-    <span class="w-2 h-2 rounded-full { $hostIsConnected ? 'bg-green-500' : 'bg-red-500' }" />
-    { $hostIsConnected ? 'Connecté' : $hostGameStore.isReconnecting ? 'Reconnexion…' : 'Déconnecté' }
-  </div>
-  <div class="fixed top-4 left-4 z-50">
-    <button on:click={handleLogout} class="btn-ghost text-sm px-3 py-1.5 bg-gray-900/80 backdrop-blur text-white border border-gray-700">
-      Déconnexion
-    </button>
-  </div>
+<div class="min-h-dvh bg-gray-950 text-white flex flex-col">
+  <!-- Top bar: logout · logo · connection status (in flow, safe-area aware) -->
+  <header class="pt-safe">
+    <div class="max-w-6xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
+      <button on:click={handleLogout} class="btn-ghost text-gray-300 hover:bg-gray-800 text-sm px-2 sm:px-3" aria-label="Déconnexion">
+        <svg class="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+        <span class="hidden sm:inline">Déconnexion</span>
+      </button>
+      <BrandLogo size="sm" tone="dark" href={null} />
+      <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium { $hostIsConnected ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400' }">
+        <span class="w-2 h-2 rounded-full { $hostIsConnected ? 'bg-green-500' : 'bg-red-500' }" />
+        <span class="hidden min-[400px]:inline">{ $hostIsConnected ? 'Connecté' : $hostGameStore.isReconnecting ? 'Reconnexion…' : 'Déconnecté' }</span>
+      </div>
+    </div>
+  </header>
 
   {#if $hostError}
-    <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white px-6 py-3 rounded-xl shadow-lg animate-slide-down">
+    <div class="mx-3 sm:mx-auto sm:max-w-md mt-2 bg-red-500/95 text-white px-4 py-3 rounded-xl shadow-lg animate-slide-down text-center" role="alert">
       {$hostError}
     </div>
   {/if}
 
-  <!-- Main Lobby -->
-  <main class="min-h-screen flex flex-col items-center justify-center px-4 py-12">
-    <!-- Logo -->
-    <div class="mb-12 animate-fade-in">
-      <div class="w-24 h-24 mx-auto rounded-2xl bg-primary-500 flex items-center justify-center mb-6">
-        <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      </div>
-      <h1 class="font-display font-bold text-4xl sm:text-5xl text-center mb-2">{$hostQuizTitle || 'Quiz en cours'}</h1>
-      <p class="text-gray-400 text-center">Partagez le code salon aux joueurs</p>
+  <main class="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-10" style="padding-bottom: calc(2rem + env(safe-area-inset-bottom));">
+    <!-- Title -->
+    <div class="text-center mb-6 sm:mb-10 animate-fade-in">
+      <h1 class="font-display font-bold text-2xl sm:text-4xl lg:text-5xl text-balance mb-2">{$hostQuizTitle || 'Quiz en cours'}</h1>
+      <p class="text-gray-400 text-sm sm:text-base">
+        Rejoignez sur <strong class="text-white break-all">{joinHost}/player/join</strong> avec le code ci-dessous
+      </p>
     </div>
 
-    <!-- Lobby Timer Countdown -->
-    {#if $hostStatus === 'LOBBY' && $hostLobbyTimerRemaining > 0}
-      <div class="mb-8 animate-fade-in">
-        <div class="flex items-center justify-center gap-3">
-          <div class="w-12 h-12 rounded-full border-4 border-primary-500/30 flex items-center justify-center">
-            <svg class="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+    <div class="grid gap-6 lg:gap-10 lg:grid-cols-2 lg:items-start">
+      <!-- Code + countdown + start -->
+      <section class="flex flex-col items-center" aria-label="Code de la partie">
+        <div class="relative w-full max-w-md animate-scale-in">
+          <div class="bg-gray-900 border-2 border-primary-500/40 rounded-3xl px-4 py-6 sm:p-10 shadow-2xl text-center">
+            <p class="text-xs sm:text-sm uppercase tracking-widest text-primary-300 mb-2">Code de la partie</p>
+            <p class="font-mono font-bold text-white select-all text-5xl min-[400px]:text-6xl sm:text-7xl lg:text-8xl tracking-[0.12em] sm:tracking-[0.2em] leading-none break-all">
+              {$hostPin || '------'}
+            </p>
           </div>
-          <div class="text-left">
-            <p class="text-sm text-gray-400">Démarrage automatique dans</p>
-            <p class="font-display font-bold text-3xl text-white font-mono tabular-nums">{formatLobbyTime($hostLobbyTimerRemaining)}</p>
-          </div>
-        </div>
-        <div class="w-full max-w-xs mt-3 bg-gray-800 rounded-full h-2 overflow-hidden">
-          <div class="bg-primary-500 h-full transition-all duration-1000 ease-linear" 
-               style="width: {Math.min(100, $hostLobbyTimerRemaining / LOBBY_DURATION_MS * 100)}%"></div>
-        </div>
-      </div>
-    {/if}
-
-    <!-- Giant Room Code Display -->
-    <div class="mb-12 animate-scale-in">
-      <div class="relative inline-block">
-        <div class="bg-gray-800 border-4 border-gray-700 rounded-3xl p-8 sm:p-12 shadow-2xl">
-          <div class="font-display font-bold tracking-widest text-6xl sm:text-8xl lg:text-9xl text-white font-mono select-all"
-               style="letter-spacing: 0.5em;">
-            {$hostPin || '------'}
-          </div>
-        </div>
-        <!-- Copy button -->
-        <button
-          on:click={copyCode}
-          class="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full p-2 hover:bg-white/20 transition-colors"
-          aria-label="Copier le code salon"
-        >
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-          </svg>
-        </button>
-      </div>
-      <p class="text-gray-500 mt-4 text-center">Code de la partie</p>
-    </div>
-
-    <!-- Players List -->
-    <div class="w-full max-w-md animate-slide-up">
-      <div class="card bg-gray-800 border-gray-700 overflow-hidden">
-        <div class="p-4 border-b border-gray-700 flex items-center justify-between">
-          <h2 class="font-semibold text-lg flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-            Joueurs ({$hostPlayerCount})
-          </h2>
-          <span class="text-sm text-gray-400">{$hostPlayerCount}/500</span>
-        </div>
-
-        <div class="max-h-[400px] overflow-y-auto">
-          {#if $hostPlayers.length === 0}
-            <div class="p-8 text-center text-gray-500">
-              <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          <button
+            on:click={copyCode}
+            class="absolute -top-3 -right-1 sm:-top-4 sm:-right-4 btn-icon rounded-full bg-primary-500 text-white shadow-lg hover:bg-primary-600"
+            aria-label={copied ? 'Code copié' : 'Copier le code salon'}
+          >
+            {#if copied}
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m5 13 4 4L19 7" />
               </svg>
-              <p>Aucun joueur pour le moment</p>
-              <p class="text-sm mt-1">Les joueurs rejoignent via l'app</p>
-            </div>
-          {:else}
-            <ul class="divide-y divide-gray-700">
-              {#each $hostPlayers as player (player.id)}
-                <li class="p-4 flex items-center gap-4 hover:bg-gray-700/50 transition-colors">
-                  <div class="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="font-medium truncate">{player.nickname}</p>
-                    <p class="text-sm text-gray-400">{player.connected ? 'Connecté' : 'Déconnecté'}</p>
-                  </div>
-                  <span class="text-sm text-gray-500">{player.score} pts</span>
-                </li>
-              {/each}
-            </ul>
-          {/if}
+            {:else}
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+            {/if}
+          </button>
         </div>
-      </div>
-    </div>
 
-    <!-- Start Button -->
-    <div class="w-full max-w-md mt-8 animate-fade-in">
-      <button
-        on:click={handleStartGame}
-        class="btn-primary w-full py-4 text-lg { $hostPlayerCount === 0 ? 'opacity-50 cursor-not-allowed' : '' }"
-        disabled={$hostPlayerCount === 0 || $hostStatus !== 'LOBBY' || !$hostIsConnected}
-      >
-        {$hostPlayerCount === 0 ? 'En attente de joueurs...' : 'Lancer le quiz'}
-        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </button>
-      {#if $hostPlayerCount === 0}
-        <p class="text-center text-gray-500 text-sm mt-2">Au moins 1 joueur requis pour commencer</p>
-      {/if}
-    </div>
+        <!-- Lobby Timer Countdown -->
+        {#if $hostStatus === 'LOBBY' && $hostLobbyTimerRemaining > 0}
+          <div class="mt-6 w-full max-w-md animate-fade-in">
+            <div class="flex items-center justify-between text-sm mb-2">
+              <span class="text-gray-400">Démarrage automatique</span>
+              <span class="font-display font-bold text-2xl tabular-nums">{formatLobbyTime($hostLobbyTimerRemaining)}</span>
+            </div>
+            <div class="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+              <div class="bg-primary-500 h-full transition-all duration-1000 ease-linear" style="width: {Math.min(100, ($hostLobbyTimerRemaining / LOBBY_DURATION_MS) * 100)}%"></div>
+            </div>
+          </div>
+        {/if}
 
-    <!-- Instructions -->
-    <div class="mt-12 w-full max-w-md text-center text-gray-500 text-sm animate-fade-in">
-      <p>Les joueurs vont sur <strong class="text-white">fastquizz.com</strong> et entrent le code salon</p>
+        <!-- Start Button -->
+        <div class="w-full max-w-md mt-6 animate-fade-in">
+          <button
+            on:click={handleStartGame}
+            class="btn-primary w-full py-4 text-lg"
+            disabled={$hostPlayerCount === 0 || $hostStatus !== 'LOBBY' || !$hostIsConnected}
+          >
+            {$hostPlayerCount === 0 ? 'En attente de joueurs…' : 'Lancer le quiz'}
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+          {#if $hostPlayerCount === 0}
+            <p class="text-center text-gray-500 text-sm mt-2">Au moins 1 joueur requis pour commencer</p>
+          {/if}
+          <p class="hidden md:block text-center text-gray-500 text-xs mt-3">
+            Raccourci : <kbd class="px-1.5 py-0.5 bg-gray-800 rounded">Espace</kbd> ou <kbd class="px-1.5 py-0.5 bg-gray-800 rounded">Entrée</kbd>
+          </p>
+        </div>
+      </section>
+
+      <!-- Players List -->
+      <section class="w-full max-w-md mx-auto lg:max-w-none animate-slide-up" aria-label="Joueurs">
+        <div class="card bg-gray-900 border-gray-800 overflow-hidden">
+          <div class="p-4 border-b border-gray-800 flex items-center justify-between">
+            <h2 class="font-semibold text-lg flex items-center gap-2">
+              <svg class="w-5 h-5 text-primary-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              Joueurs
+            </h2>
+            <span class="text-sm text-gray-400 tabular-nums">{$hostPlayerCount}/500</span>
+          </div>
+
+          <div class="max-h-[45vh] lg:max-h-[60vh] overflow-y-auto overscroll-contain">
+            {#if $hostPlayers.length === 0}
+              <div class="p-8 text-center text-gray-500">
+                <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <p>Aucun joueur pour le moment</p>
+                <p class="text-sm mt-1">Partagez le code pour qu'ils rejoignent</p>
+              </div>
+            {:else}
+              <ul class="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 p-3">
+                {#each $hostPlayers as player (player.id)}
+                  <li class="flex items-center gap-2.5 rounded-xl bg-gray-800/70 px-3 py-2.5 animate-scale-in">
+                    <span class="w-2 h-2 shrink-0 rounded-full {player.connected ? 'bg-green-500' : 'bg-gray-500'}" role="img" aria-label={player.connected ? 'Connecté' : 'Déconnecté'} />
+                    <p class="flex-1 min-w-0 font-medium truncate">{player.nickname}</p>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </div>
+        </div>
+      </section>
     </div>
   </main>
-
-  <!-- Keyboard hint -->
-  <div class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-800/80 backdrop-blur text-gray-400 text-xs px-3 py-2 rounded-lg">
-    Appuyez sur <kbd class="px-1.5 py-0.5 bg-gray-700 rounded">Espace</kbd> ou <kbd class="px-1.5 py-0.5 bg-gray-700 rounded">Entrée</kbd> pour lancer
-  </div>
 </div>

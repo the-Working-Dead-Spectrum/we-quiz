@@ -7,39 +7,60 @@
     @apply border-gray-200;
   }
 
-  body {
-    @apply bg-gray-50 text-gray-900 antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  }
-
   html {
     @apply scroll-smooth;
+    /* Stop iOS from inflating text in landscape; keep user zoom available. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    /* No grey flash on tap (Android / iOS). */
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+
+  h1,
+  h2,
+  h3,
+  p,
+  li,
+  span {
+    overflow-wrap: break-word;
   }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center px-6 py-3 text-base font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 text-base font-semibold rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none;
+    touch-action: manipulation;
   }
 
   .btn-primary {
-    @apply btn bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500 active:scale-[0.98];
+    @apply btn bg-primary-500 text-white hover:bg-primary-600 focus-visible:ring-primary-500 active:scale-[0.98];
   }
 
   .btn-secondary {
-    @apply btn bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-primary-500 active:scale-[0.98];
+    @apply btn bg-white text-gray-800 border border-gray-300 hover:bg-gray-50 focus-visible:ring-primary-500 active:scale-[0.98];
   }
 
   .btn-danger {
-    @apply btn bg-red-500 text-white hover:bg-red-600 focus:ring-red-500 active:scale-[0.98];
+    @apply btn bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500 active:scale-[0.98];
   }
 
   .btn-ghost {
-    @apply btn bg-transparent text-gray-600 hover:bg-gray-100 focus:ring-gray-500 active:scale-[0.98];
+    @apply btn bg-transparent text-gray-600 hover:bg-gray-100 focus-visible:ring-gray-500 active:scale-[0.98];
+  }
+
+  /* Square icon-only button with a 44px touch target. */
+  .btn-icon {
+    @apply btn px-0 w-11 h-11 min-h-0;
   }
 
   .input {
-    @apply w-full px-4 py-3 text-base border border-gray-300 rounded-xl bg-white placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full min-h-[44px] px-4 py-3 text-base border border-gray-300 rounded-xl bg-white placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
   }
 
   .input-error {
@@ -51,7 +72,7 @@
   }
 
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-shadow duration-200 hover:shadow-md;
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-shadow duration-200;
   }
 
   .card-hover {
@@ -78,48 +99,21 @@
     @apply badge bg-red-100 text-red-700;
   }
 
-  .kahoot-btn {
-    @apply relative w-full aspect-square rounded-2xl font-bold text-white text-2xl sm:text-3xl lg:text-4xl transition-all duration-150 active:scale-95 focus:outline-none focus:ring-4 focus:ring-offset-2;
+  /* Answer tile (player game screen): shape badge on the left, readable text on the right.
+     Stacks in one column on phones, two columns from `sm`. */
+  .answer-tile {
+    @apply relative flex w-full items-center gap-3 rounded-2xl p-3 sm:p-4 min-h-[64px] sm:min-h-[96px] text-left font-semibold shadow-lg transition-all duration-150 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70 select-none;
+    touch-action: manipulation;
   }
 
-  .kahoot-btn-red {
-    @apply kahoot-btn bg-kahoot-red focus:ring-kahoot-red/50;
+  .answer-shape {
+    @apply flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-xl bg-black/15;
   }
 
-  .kahoot-btn-blue {
-    @apply kahoot-btn bg-kahoot-blue focus:ring-kahoot-blue/50;
-  }
-
-  .kahoot-btn-yellow {
-    @apply kahoot-btn bg-kahoot-yellow text-gray-900 focus:ring-kahoot-yellow/50;
-  }
-
-  .kahoot-btn-green {
-    @apply kahoot-btn bg-kahoot-green focus:ring-kahoot-green/50;
-  }
-
-  .kahoot-btn-shape {
-    @apply absolute inset-0 flex items-center justify-center;
-  }
-
-  .kahoot-btn-shape-triangle::before {
-    content: '';
-    @apply w-0 h-0 border-l-12 border-r-12 border-b-20 border-transparent border-b-kahoot-red;
-  }
-
-  .kahoot-btn-shape-diamond::before {
-    content: '';
-    @apply w-16 h-16 rotate-45 bg-kahoot-blue;
-  }
-
-  .kahoot-btn-shape-circle::before {
-    content: '';
-    @apply w-16 h-16 rounded-full bg-kahoot-yellow;
-  }
-
-  .kahoot-btn-shape-square::before {
-    content: '';
-    @apply w-16 h-16 bg-kahoot-green;
+  .answer-text {
+    @apply flex-1 min-w-0 text-base leading-snug sm:text-lg md:text-xl;
+    overflow-wrap: anywhere;
+    hyphens: auto;
   }
 }
 
@@ -129,23 +123,27 @@
   }
 
   .animate-in {
-    animation: fadeIn 0.3s ease-out, slideUp 0.4s ease-out;
+    animation:
+      fadeIn 0.3s ease-out,
+      slideUp 0.4s ease-out;
   }
 
-  .perspective-1000 {
-    perspective: 1000px;
+  /* Safe areas (notch / home indicator) for the installed PWA (viewport-fit=cover). */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
   }
 
-  .preserve-3d {
-    transform-style: preserve-3d;
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .backface-hidden {
-    backface-visibility: hidden;
+  .min-h-dvh {
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling (desktop) */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

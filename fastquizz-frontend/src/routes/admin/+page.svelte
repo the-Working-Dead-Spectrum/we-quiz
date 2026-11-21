@@ -3,6 +3,8 @@
   import { goto } from '$app/navigation';
   import { authStore, isAuthenticated, flashMessage, storeHostToken } from '$lib/stores';
   import { api, getAuthToken } from '$lib/utils/api';
+  import { pageTitle } from '$lib/brand';
+  import BrandLogo from '$lib/components/BrandLogo.svelte';
 
   function handleLogout() {
     authStore.logout();
@@ -107,9 +109,19 @@
     (event.currentTarget as HTMLInputElement).select();
   }
 
-  function copyText(text: string, label: string) {
-    navigator.clipboard.writeText(text);
-    alert(`${label} copié !`);
+  // Inline "Copié" feedback instead of a blocking alert().
+  let copiedKey: string | null = null;
+  let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+
+  async function copyText(text: string, key: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      copiedKey = key;
+      clearTimeout(copiedTimer);
+      copiedTimer = setTimeout(() => (copiedKey = null), 1800);
+    } catch {
+      /* clipboard unavailable: the field stays selectable */
+    }
   }
 
   function formatDate(dateString: string): string {
@@ -124,38 +136,34 @@
 </script>
 
 <svelte:head>
-  <title>Mes quiz - fastquizz</title>
+  <title>{pageTitle('Mes quiz')}</title>
 </svelte:head>
 
 <svelte:window on:keydown={handleWindowKeydown} />
 
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-dvh bg-gray-50">
   <!-- Navigation -->
-  <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <div class="flex items-center gap-4">
-          <a href="/" class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-xl bg-primary-500 flex items-center justify-center">
-              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <span class="font-display font-bold text-xl text-gray-900">fastquizz</span>
-          </a>
-          <span class="hidden sm:block text-gray-400">/</span>
-          <h1 class="font-display font-semibold text-lg text-gray-900">Tableau de bord</h1>
+  <nav class="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100 pt-safe">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between gap-2 h-16">
+        <div class="flex items-center gap-3 min-w-0">
+          <BrandLogo size="md" />
+          <span class="hidden md:block text-gray-300">/</span>
+          <h1 class="hidden md:block font-display font-semibold text-lg text-gray-900 truncate">Tableau de bord</h1>
         </div>
 
-        <div class="flex items-center gap-4">
-          <button on:click={handleCreateQuiz} class="btn-primary">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <button on:click={handleCreateQuiz} class="btn-primary px-3 sm:px-5" aria-label="Nouveau quiz">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            Nouveau quiz
+            <span class="hidden sm:inline">Nouveau quiz</span>
           </button>
-          <button on:click={handleLogout} class="btn-ghost text-sm">
-            Déconnexion
+          <button on:click={handleLogout} class="btn-ghost text-sm px-2.5 sm:px-4" aria-label="Déconnexion">
+            <svg class="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span class="hidden sm:inline">Déconnexion</span>
           </button>
         </div>
       </div>
@@ -163,7 +171,7 @@
   </nav>
 
   <!-- Main Content -->
-  <main class="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
+  <main class="px-3 sm:px-6 lg:px-8" style="padding-top: calc(5.5rem + env(safe-area-inset-top)); padding-bottom: calc(3rem + env(safe-area-inset-bottom));">
     <div class="max-w-7xl mx-auto">
       {#if error}
         <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700" role="alert">
@@ -209,16 +217,16 @@
             </button>
           </div>
         {:else}
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {#each quizzes as quiz}
-              <div class="card-hover group">
-                <div class="p-6">
-                  <div class="flex items-start justify-between mb-3">
-                    <h3 class="font-display font-semibold text-lg text-gray-900 group-hover:text-primary-500 transition-colors line-clamp-2">
+              <div class="card-hover group flex flex-col">
+                <div class="p-4 sm:p-6 flex flex-col flex-1">
+                  <div class="flex items-start justify-between gap-3 mb-3">
+                    <h3 class="font-display font-semibold text-lg text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2 min-w-0">
                       {quiz.title}
                     </h3>
-                    <span class="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-700 rounded-full">
-                      {quiz.questions.length} questions
+                    <span class="shrink-0 px-2 py-1 text-xs font-medium bg-primary-100 text-primary-700 rounded-full whitespace-nowrap">
+                      {quiz.questions.length} question{quiz.questions.length > 1 ? 's' : ''}
                     </span>
                   </div>
 
@@ -226,25 +234,27 @@
                     <p class="text-sm text-gray-500 mb-4 line-clamp-2">{quiz.description}</p>
                   {/if}
 
-                  <div class="flex items-center justify-between text-xs text-gray-400 mb-4">
+                  <div class="flex flex-col min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between gap-0.5 text-xs text-gray-400 mb-4 mt-auto">
                     <span>Créé le {formatDate(quiz.createdAt)}</span>
                     <span>Modifié le {formatDate(quiz.updatedAt)}</span>
                   </div>
 
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-1">
                       <button
                         on:click={() => handlePlayQuiz(quiz.id)}
-                        class="btn-primary flex-1 py-2 text-sm"
+                        class="btn-primary flex-1 text-sm px-3"
                       >
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Créer la partie
+                        Lancer
                       </button>
                       <button
                         on:click={() => handleEditQuiz(quiz.id)}
-                        class="btn-ghost p-2"
+                        class="btn-icon btn-ghost"
                         title="Modifier"
+                        aria-label="Modifier"
                       >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -252,8 +262,9 @@
                       </button>
                       <button
                         on:click={() => handleTogglePublic(quiz.id, quiz.isPublic)}
-                        class="btn-ghost p-2 {quiz.isPublic ? 'text-green-600' : 'text-gray-600'} hover:bg-gray-50"
+                        class="btn-icon btn-ghost {quiz.isPublic ? 'text-green-600' : 'text-gray-600'}"
                         title={quiz.isPublic ? 'Rendre privé' : 'Rendre public'}
+                        aria-label={quiz.isPublic ? 'Rendre privé' : 'Rendre public'}
                       >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           {#if quiz.isPublic}
@@ -265,8 +276,9 @@
                       </button>
                       <button
                         on:click={() => handleDeleteQuiz(quiz.id)}
-                        class="btn-ghost p-2 text-red-600 hover:bg-red-50"
+                        class="btn-icon btn-ghost text-red-600 hover:bg-red-50"
                         title="Supprimer"
+                        aria-label="Supprimer"
                       >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -301,18 +313,19 @@
 
   <!-- Room Modal -->
   {#if roomModal}
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+    <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fade-in">
       <!-- Backdrop: mouse shortcut only; keyboard users close with Escape or the buttons -->
-      <div class="absolute inset-0 bg-black/50" role="presentation" on:click={closeRoomModal} />
+      <div class="absolute inset-0 bg-gray-950/60" role="presentation" on:click={closeRoomModal} />
       <div
-        class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-slide-up"
+        class="relative bg-white rounded-t-3xl sm:rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 animate-slide-up max-h-[90dvh] overflow-y-auto"
+        style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom));"
         role="dialog"
         aria-modal="true"
         aria-labelledby="room-modal-title"
       >
         <div class="flex items-center justify-between mb-4">
           <h3 id="room-modal-title" class="font-display font-semibold text-lg text-gray-900">Salon créé</h3>
-          <button on:click={closeRoomModal} class="text-gray-400 hover:text-gray-600" aria-label="Fermer">
+          <button on:click={closeRoomModal} class="btn-icon btn-ghost -mr-2 text-gray-400" aria-label="Fermer">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -329,15 +342,11 @@
               type="text"
               value={roomModal.pin}
               readonly
-              class="flex-1 input bg-gray-50 text-center text-2xl font-mono tracking-widest"
+              class="flex-1 min-w-0 input bg-gray-50 text-center text-2xl font-mono font-bold tracking-[0.2em]"
               on:click={selectInput}
-              style="letter-spacing: 0.5em;"
             />
-            <button on:click={() => roomModal && copyText(roomModal.pin, 'Code salon')} class="btn-primary px-4 flex items-center">
-              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-              </svg>
-              Copier
+            <button on:click={() => roomModal && copyText(roomModal.pin, 'pin')} class="btn-primary shrink-0 px-4 w-28">
+              {copiedKey === 'pin' ? 'Copié ✓' : 'Copier'}
             </button>
           </div>
         </div>
@@ -351,21 +360,21 @@
               type="text"
               value={roomModal.joinUrl}
               readonly
-              class="flex-1 input bg-gray-50 text-sm"
+              class="flex-1 min-w-0 input bg-gray-50 text-sm"
               on:click={selectInput}
             />
-            <button on:click={() => roomModal && copyText(roomModal.joinUrl, 'Lien')} class="btn-primary px-4">
-              Copier
+            <button on:click={() => roomModal && copyText(roomModal.joinUrl, 'url')} class="btn-secondary shrink-0 px-4 w-28">
+              {copiedKey === 'url' ? 'Copié ✓' : 'Copier'}
             </button>
           </div>
         </div>
 
-        <div class="flex gap-2">
-          <button on:click={openLobby} class="btn-primary flex-1 py-2">
-            Ouvrir le lobby
-          </button>
-          <button on:click={closeRoomModal} class="btn-ghost flex-1 py-2">
+        <div class="flex flex-col-reverse sm:flex-row gap-2">
+          <button on:click={closeRoomModal} class="btn-ghost sm:flex-1">
             Fermer
+          </button>
+          <button on:click={openLobby} class="btn-primary sm:flex-1">
+            Ouvrir le lobby
           </button>
         </div>
 
