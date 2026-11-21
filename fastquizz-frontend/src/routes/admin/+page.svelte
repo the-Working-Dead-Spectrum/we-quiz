@@ -148,30 +148,34 @@
       <div class="flex items-center justify-between gap-2 h-16">
         <div class="flex items-center gap-3 min-w-0">
           <BrandLogo size="md" />
-          <span class="hidden md:block text-gray-300">/</span>
-          <h1 class="hidden md:block font-display font-semibold text-lg text-gray-900 truncate">Tableau de bord</h1>
+          {#if $isAuthenticated}
+            <span class="hidden md:block text-gray-300">/</span>
+            <h1 class="hidden md:block font-display font-semibold text-lg text-gray-900 truncate">Tableau de bord</h1>
+          {/if}
         </div>
 
-        <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
-          <a href="/admin/import" class="btn-secondary px-3 sm:px-5 text-sm" aria-label="Importer depuis Excel">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12" />
-            </svg>
-            <span class="hidden sm:inline">Importer Excel</span>
-          </a>
-          <button on:click={handleCreateQuiz} class="btn-primary px-3 sm:px-5" aria-label="Nouveau quiz">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            <span class="hidden sm:inline">Nouveau quiz</span>
-          </button>
-          <button on:click={handleLogout} class="btn-ghost text-sm px-2.5 sm:px-4" aria-label="Déconnexion">
-            <svg class="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span class="hidden sm:inline">Déconnexion</span>
-          </button>
-        </div>
+        {#if $isAuthenticated}
+          <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            <a href="/admin/import" class="btn-secondary px-3 sm:px-5 text-sm" aria-label="Importer depuis Excel">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12" />
+              </svg>
+              <span class="hidden sm:inline">Importer Excel</span>
+            </a>
+            <button on:click={handleCreateQuiz} class="btn-primary px-3 sm:px-5" aria-label="Nouveau quiz">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <span class="hidden sm:inline">Nouveau quiz</span>
+            </button>
+            <button on:click={handleLogout} class="btn-ghost text-sm px-2.5 sm:px-4" aria-label="Déconnexion">
+              <svg class="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span class="hidden sm:inline">Déconnexion</span>
+            </button>
+          </div>
+        {/if}
       </div>
     </div>
   </nav>
