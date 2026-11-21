@@ -3,11 +3,29 @@ node_modules/
 
 # Build output
 dist/
+*.tsbuildinfo
 
-# Environment files
+# Environment files (secrets) - only the example is versioned
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+
+# Test artifacts
+coverage/
+.nyc_output/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Prisma
+# prisma/migrations/ MUST stay versioned: `prisma migrate deploy` applies it in production.
+prisma/*.db
+prisma/*.db-journal
 
 # IDE
 .vscode/
@@ -18,18 +36,6 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Test coverage
-coverage/
-
-# Prisma
-prisma/migrations/
 
 # Temporary files
 *.tmp

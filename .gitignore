@@ -1,26 +1,16 @@
-# Dependencies
+# Repo-wide safety net. Each app has its own .gitignore
+# (fastquizz-frontend/.gitignore, fastquizz-backend/.gitignore).
+
+# Dependencies (any level)
 node_modules/
 
-# Environment files (secrets) - keep only *.example
+# Environment files (secrets) - only examples are versioned
 .env
 .env.*
 !.env.example
 
-# Build output
-dist/
-build/
-.svelte-kit/
-.vercel/
-.output/
-
-# Test artifacts
-coverage/
-test-results/
-playwright-report/
-
 # Logs
 *.log
-npm-debug.log*
 
 # IDE / OS
 .idea/

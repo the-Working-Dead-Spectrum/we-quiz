@@ -1,8 +1,7 @@
 // API client for REST endpoints
 
 import type { CreateGameResponse } from '$lib/types';
-
-const API_BASE = '/api';
+import { getApiBase } from './backend-url';
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, string>;
@@ -11,7 +10,8 @@ interface FetchOptions extends RequestInit {
 async function fetchJson<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
   const { params, headers, ...init } = options;
 
-  const url = new URL(`${API_BASE}${endpoint}`, window.location.origin);
+  // Absolute when PUBLIC_BACKEND_URL is set; otherwise resolved against the current origin.
+  const url = new URL(`${getApiBase()}${endpoint}`, window.location.origin);
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       url.searchParams.append(key, value);

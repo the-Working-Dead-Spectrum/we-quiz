@@ -8,6 +8,7 @@
 // flushed before the identity message after a reconnect.
 
 import type { ClientEvent, ClientEventMap, ClientEventName, ServerEventMap, ServerEventName } from '$lib/types';
+import { getBackendSocketUrl } from './backend-url';
 
 export type { ServerEventMap } from '$lib/types';
 
@@ -221,12 +222,9 @@ function isEnvelope(value: unknown): value is { event: string; data: unknown } {
   );
 }
 
-/** Game WebSocket URL (ADR 0001 §1): dev `ws://localhost:3000/game`, otherwise same host `/game`. */
+/** Game WebSocket URL (ADR 0001 §1). Resolution rules live in `backend-url.ts`. */
 export function getGameSocketUrl(): string {
-  const { hostname, port, protocol, host } = window.location;
-  const isDev = hostname === 'localhost' && port === '5173';
-  if (isDev) return 'ws://localhost:3000/game';
-  return `${protocol === 'https:' ? 'wss:' : 'ws:'}//${host}/game`;
+  return getBackendSocketUrl();
 }
 
 // One live game socket per tab: creating a manager destroys the previous one first.
