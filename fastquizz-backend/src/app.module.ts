@@ -11,6 +11,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { QuizModule } from './modules/quiz/quiz.module';
 import { GameModule } from './modules/game/game.module';
 import { PlayerModule } from './modules/player/player.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { PlayerModule } from './modules/player/player.module';
     QuizModule,
     GameModule,
     PlayerModule,
+    HealthModule,
   ],
   providers: [
     {

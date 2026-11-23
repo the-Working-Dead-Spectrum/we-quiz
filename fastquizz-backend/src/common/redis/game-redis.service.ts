@@ -208,6 +208,10 @@ export class GameRedisService implements OnModuleInit, OnModuleDestroy {
     return this.subscriber;
   }
 
+  async ping(): Promise<void> {
+    await this.client.ping();
+  }
+
   // ========== KEY GENERATORS ==========
   private gameStateKey(pin: string): string {
     return `game:${pin}:state`;
