@@ -32,6 +32,7 @@ import { OpenSocketGuard } from './open-socket.guard';
 import {
   ANSWER_COUNT_INTERVAL_MS,
   calculateScore,
+  INTER_QUESTION_DELAY_MS,
   isPlayableQuestion,
   LEADERBOARD_TOP_SIZE,
   LOBBY_DURATION_MS,
@@ -127,6 +128,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   // In-memory socket rooms and timers: single backend instance only (tech debt D-003).
   private readonly rooms = new Map<string, Set<GameSocket>>();
   private readonly questionTimers = new Map<string, NodeJS.Timeout>(); // key `${pin}:${questionIndex}`
+  private readonly interQuestionTimers = new Map<string, NodeJS.Timeout>(); // key `pin`
   private readonly answerCountIntervals = new Map<string, NodeJS.Timeout>();
   private readonly lobbyTimers = new Map<string, NodeJS.Timeout>();
   private readonly cleanupTimers = new Map<string, NodeJS.Timeout>();
@@ -142,10 +144,12 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
   onModuleDestroy(): void {
     for (const timer of this.questionTimers.values()) clearTimeout(timer);
+    for (const timer of this.interQuestionTimers.values()) clearTimeout(timer);
     for (const timer of this.cleanupTimers.values()) clearTimeout(timer);
     for (const interval of this.answerCountIntervals.values()) clearInterval(interval);
     for (const interval of this.lobbyTimers.values()) clearInterval(interval);
     this.questionTimers.clear();
+    this.interQuestionTimers.clear();
     this.cleanupTimers.clear();
     this.answerCountIntervals.clear();
     this.lobbyTimers.clear();
@@ -226,6 +230,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     if (state.status !== 'QUESTION_RESULT') {
       throw new GameError('INVALID_STATE', 'The next step is only available once a question has ended');
     }
+    this.clearInterQuestionTimer(dto.pin);
     const nextIndex = state.currentQuestionIndex + 1;
     if (nextIndex >= state.questionCount) {
       await this.showPodium(dto.pin);
@@ -548,6 +553,33 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         buildFeedback(socket.playerId, questionIndex, correctOptionId, answersByPlayer.get(socket.playerId) ?? null, standings),
       );
     }
+
+    // Schedule auto-advance to next question after INTER_QUESTION_DELAY_MS
+    // Only if there are more questions; otherwise the host will manually go to podium
+    if (questionIndex + 1 < state.questionCount) {
+      this.clearInterQuestionTimer(pin);
+      const timer = setTimeout(
+        () => void this.runSafely(`auto-advance after question ${questionIndex} of game ${pin}`, () => this.autoAdvanceQuestion(pin, questionIndex)),
+        INTER_QUESTION_DELAY_MS,
+      );
+      this.interQuestionTimers.set(pin, timer);
+    }
+  }
+
+  private async autoAdvanceQuestion(pin: string, completedQuestionIndex: number): Promise<void> {
+    // Verify the game is still in QUESTION_RESULT state for the completed question
+    const state = await this.redis.getGameState(pin);
+    if (!state) return;
+    if (state.status !== 'QUESTION_RESULT') return;
+    if (state.currentQuestionIndex !== completedQuestionIndex) return;
+
+    const nextIndex = completedQuestionIndex + 1;
+    if (nextIndex >= state.questionCount) {
+      // No more questions, go to podium (host will manually trigger, but we can also auto-advance)
+      await this.showPodium(pin);
+    } else {
+      await this.startQuestion(pin, nextIndex);
+    }
   }
 
   private async showPodium(pin: string): Promise<void> {
@@ -679,10 +711,19 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     }
   }
 
+  private clearInterQuestionTimer(pin: string): void {
+    const timer = this.interQuestionTimers.get(pin);
+    if (timer) {
+      clearTimeout(timer);
+      this.interQuestionTimers.delete(pin);
+    }
+  }
+
   /** Clears every in-memory timer of the game except the cleanup timer. */
   private clearGameTimers(pin: string): void {
     this.clearLobbyTimer(pin);
     this.stopAnswerCountBroadcast(pin);
+    this.clearInterQuestionTimer(pin);
     const prefix = `${pin}:`;
     for (const [key, timer] of this.questionTimers) {
       if (key.startsWith(prefix)) {

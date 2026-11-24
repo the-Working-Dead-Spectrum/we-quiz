@@ -209,6 +209,8 @@ export interface HostGameState {
   timeRemaining: number;
   /** ms */
   lobbyTimerRemaining: number;
+  /** ms - countdown for auto-advance between questions */
+  interQuestionCountdown: number;
   players: PlayerPublic[];
   question: QuestionStartedEvent | null;
   questionResults: QuestionEndedEvent | null;
@@ -230,6 +232,7 @@ function initialHostState(): HostGameState {
     questionCount: 0,
     timeRemaining: 0,
     lobbyTimerRemaining: 0,
+    interQuestionCountdown: 0,
     players: [],
     question: null,
     questionResults: null,
@@ -253,6 +256,7 @@ function createHostGameStore() {
   let pendingCreate: HostCreateGamePayload | null = null;
 
   const clock = createQuestionClock((ms) => update((s) => ({ ...s, timeRemaining: ms })));
+  const interQuestionClock = createQuestionClock((ms) => update((s) => ({ ...s, interQuestionCountdown: ms })));
   const transientError = createTransientError((message) => update((s) => ({ ...s, error: message })));
 
   function identify(): ClientEvent | null {
@@ -264,6 +268,7 @@ function createHostGameStore() {
 
   function teardown(): void {
     clock.stop();
+    interQuestionClock.stop();
     if (ws) {
       destroyWebSocketManager(ws);
       ws = null;
@@ -358,6 +363,7 @@ function createHostGameStore() {
     });
 
     manager.on('question:started', (data) => {
+      interQuestionClock.stop();
       update((s) => ({
         ...s,
         status: 'QUESTION_ACTIVE',
@@ -366,6 +372,7 @@ function createHostGameStore() {
         question: data,
         questionResults: null,
         lobbyTimerRemaining: 0,
+        interQuestionCountdown: 0,
         answerCount:
           s.question?.questionIndex === data.questionIndex
             ? s.answerCount
@@ -384,6 +391,12 @@ function createHostGameStore() {
 
     manager.on('question:ended', (data) => {
       clock.stop();
+      // Start 5-second auto-advance countdown (matches backend INTER_QUESTION_DELAY_MS)
+      interQuestionClock.start({
+        questionStartTime: Date.now(),
+        timeLimit: 5,
+        serverTime: Date.now(),
+      } as any);
       update((s) => ({
         ...s,
         status: 'QUESTION_RESULT',
@@ -396,7 +409,8 @@ function createHostGameStore() {
 
     manager.on('game:podium', (data) => {
       clock.stop();
-      update((s) => ({ ...s, status: 'PODIUM', podium: data, timeRemaining: 0 }));
+      interQuestionClock.stop();
+      update((s) => ({ ...s, status: 'PODIUM', podium: data, timeRemaining: 0, interQuestionCountdown: 0 }));
     });
 
     manager.on('error', handleError);
@@ -512,6 +526,8 @@ export interface PlayerGameState {
   timeRemaining: number;
   /** ms */
   lobbyTimerRemaining: number;
+  /** ms - countdown for auto-advance between questions */
+  interQuestionCountdown: number;
   /** Everyone in the game, in arrival order (snapshot from player:joined, then lobby:player_joined). */
   players: PlayerPublic[];
   score: number;
@@ -545,6 +561,7 @@ function initialPlayerState(): PlayerGameState {
     questionCount: 0,
     timeRemaining: 0,
     lobbyTimerRemaining: 0,
+    interQuestionCountdown: 0,
     players: [],
     score: 0,
     rank: 0,
@@ -572,6 +589,7 @@ function createPlayerGameStore() {
   let pendingJoin: PlayerJoinPayload | null = null;
 
   const clock = createQuestionClock((ms) => update((s) => ({ ...s, timeRemaining: ms })));
+  const interQuestionClock = createQuestionClock((ms) => update((s) => ({ ...s, interQuestionCountdown: ms })));
   const transientError = createTransientError((message) => update((s) => ({ ...s, error: message })));
 
   function identify(): ClientEvent | null {
@@ -583,6 +601,7 @@ function createPlayerGameStore() {
 
   function teardown(): void {
     clock.stop();
+    interQuestionClock.stop();
     if (ws) {
       destroyWebSocketManager(ws);
       ws = null;
@@ -721,6 +740,7 @@ function createPlayerGameStore() {
     });
 
     manager.on('question:started', (data) => {
+      interQuestionClock.stop();
       update((s) => {
         const sameQuestion = s.question?.questionIndex === data.questionIndex;
         return {
@@ -730,6 +750,7 @@ function createPlayerGameStore() {
           questionCount: data.questionCount,
           question: data,
           lobbyTimerRemaining: 0,
+          interQuestionCountdown: 0,
           answerStatus: sameQuestion ? s.answerStatus : 'none',
           selectedOptionId: sameQuestion ? s.selectedOptionId : null,
           feedback: null,
@@ -750,6 +771,12 @@ function createPlayerGameStore() {
     manager.on('question:ended', (data) => {
       if (data.questionIndex < get(store).currentQuestionIndex) return;
       clock.stop();
+      // Start 5-second auto-advance countdown (matches backend INTER_QUESTION_DELAY_MS)
+      interQuestionClock.start({
+        questionStartTime: Date.now(),
+        timeLimit: 5,
+        serverTime: Date.now(),
+      } as any);
       update((s) => ({
         ...s,
         status: s.status === 'PODIUM' ? s.status : 'QUESTION_RESULT',
@@ -763,6 +790,12 @@ function createPlayerGameStore() {
     manager.on('player:feedback', (data) => {
       if (data.questionIndex < get(store).currentQuestionIndex) return;
       clock.stop();
+      // Start 5-second auto-advance countdown (matches backend INTER_QUESTION_DELAY_MS)
+      interQuestionClock.start({
+        questionStartTime: Date.now(),
+        timeLimit: 5,
+        serverTime: Date.now(),
+      } as any);
       update((s) => ({
         ...s,
         status: s.status === 'PODIUM' ? s.status : 'QUESTION_RESULT',
@@ -779,6 +812,7 @@ function createPlayerGameStore() {
 
     manager.on('game:podium', (data) => {
       clock.stop();
+      interQuestionClock.stop();
       update((s) => {
         const me = s.playerId ? data.finalLeaderboard.find((e) => e.playerId === s.playerId) : undefined;
         return {
@@ -786,6 +820,7 @@ function createPlayerGameStore() {
           status: 'PODIUM',
           podium: data,
           timeRemaining: 0,
+          interQuestionCountdown: 0,
           score: me?.score ?? s.score,
           rank: me?.rank ?? s.rank,
           correctAnswersCount: me?.correctAnswersCount ?? s.correctAnswersCount,
@@ -909,6 +944,7 @@ export const hostPodium = derived(hostGameStore, ($s) => $s.podium);
 export const hostAnswerCount = derived(hostGameStore, ($s) => $s.answerCount);
 export const hostTimeRemaining = derived(hostGameStore, ($s) => $s.timeRemaining);
 export const hostLobbyTimerRemaining = derived(hostGameStore, ($s) => $s.lobbyTimerRemaining);
+export const hostInterQuestionCountdown = derived(hostGameStore, ($s) => $s.interQuestionCountdown);
 export const hostIsConnected = derived(hostGameStore, ($s) => $s.isConnected);
 export const hostError = derived(hostGameStore, ($s) => $s.error);
 
@@ -927,6 +963,7 @@ export const playerAnswerStatus = derived(playerGameStore, ($s) => $s.answerStat
 export const playerPodium = derived(playerGameStore, ($s) => $s.podium);
 export const playerTimeRemaining = derived(playerGameStore, ($s) => $s.timeRemaining);
 export const playerLobbyTimerRemaining = derived(playerGameStore, ($s) => $s.lobbyTimerRemaining);
+export const playerInterQuestionCountdown = derived(playerGameStore, ($s) => $s.interQuestionCountdown);
 export const playerLobbyPlayers = derived(playerGameStore, ($s) => $s.players);
 export const playerIsConnected = derived(playerGameStore, ($s) => $s.isConnected);
 export const playerIsReconnecting = derived(playerGameStore, ($s) => $s.isReconnecting);

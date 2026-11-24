@@ -11,6 +11,7 @@ export const ANSWER_COUNT_INTERVAL_MS = 500;
 export const DEFAULT_MAX_PLAYERS = 500;
 export const LEADERBOARD_TOP_SIZE = 10;
 export const PODIUM_SIZE = 3;
+export const INTER_QUESTION_DELAY_MS = 5_000;
 
 export interface PlayableOption {
   isCorrect: boolean;

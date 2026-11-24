@@ -12,6 +12,7 @@
     hostPodium,
     hostAnswerCount,
     hostTimeRemaining,
+    hostInterQuestionCountdown,
     hostIsConnected,
     hostError,
     flashMessage,
@@ -73,6 +74,7 @@
     ? Object.values($hostQuestionResults.answerDistribution).reduce((sum, n) => sum + n, 0)
     : 0;
   $: isLastQuestion = $hostGameStore.questionCount > 0 && questionNumber >= $hostGameStore.questionCount;
+  $: interQuestionCountdown = $hostInterQuestionCountdown;
 
   function handleStartGame() {
     hostGameStore.startGame();
@@ -280,6 +282,27 @@
         <!-- Question Results -->
         {#if $hostQuestionResults}
           <div class="animate-fade-in">
+            <!-- Auto-advance countdown -->
+            {#if interQuestionCountdown > 0}
+              <div class="mb-4 sm:mb-6 p-4 bg-primary-500/10 border border-primary-500/30 rounded-xl animate-pulse">
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 shrink-0 rounded-lg bg-primary-500/20 flex items-center justify-center">
+                      <svg class="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-sm text-primary-300">Question suivante dans</p>
+                      <p class="font-display font-bold text-2xl text-primary-200 tabular-nums">{Math.ceil(interQuestionCountdown / 1000)}s</p>
+                    </div>
+                  </div>
+                  <div class="w-32 bg-gray-800 rounded-full h-2 overflow-hidden">
+                    <div class="bg-primary-500 h-full transition-all duration-500 ease-linear" style="width: {Math.max(0, (interQuestionCountdown / 5000) * 100)}%"></div>
+                  </div>
+                </div>
+              </div>
+            {/if}
             <!-- Correct Answer Reveal -->
             <div class="card bg-gray-900 border-gray-800 mb-4 sm:mb-6 overflow-hidden">
               <div class="p-4 sm:p-6">
